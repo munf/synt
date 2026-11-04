@@ -1,0 +1,23 @@
+.env
+.env.local
+.env.figma
+
+# Hasil fetch Figma — regenerate lewat design/figma-fetch.mjs, jangan di-commit.
+design/raw/
+node_modules
+dist/
+build/
+*.log
+.vercel
+.DS_Store
+.vite/
+
+# cadangan synt-env (.env.sebelum-synt-env) & varian .env lain berisi rahasia
+.env.*
+!.env.example
+!.env.*.example
+
+# cache build TypeScript (tsc -b) — berubah tiap build, bukan sumber
+*.tsbuildinfo
+# mode template lab (bukan rahasia)
+!.env.template

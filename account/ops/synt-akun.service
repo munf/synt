@@ -1,0 +1,48 @@
+[Unit]
+Description=synt-akun — akun terminal (login wallet Solana + profil), DB terpisah synt_akun
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+# ⭐ Review 1 Nov: BUKAN root. Satu-satunya layanan yang menulis atas permintaan internet;
+# pengguna dinamis tak bisa MEMBACA apa pun di /root (rahasia, repo lain, hash Caddy),
+# sedangkan sandbox daftar-larangan versi pertama hanya menutup path yang sempat diingat.
+# Biner disalin ke /opt (pengguna dinamis tak bisa masuk /root); migrasi tertanam di biner.
+# .env dibaca systemd (sebagai root) SEBELUM hak diturunkan.
+DynamicUser=yes
+EnvironmentFile=/root/synt-akun/.env
+ExecStart=/opt/synt-akun/synt-akun
+Restart=always
+RestartSec=10s
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+UMask=0077
+MemoryMax=128M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=synt-akun
+
+[Install]
+WantedBy=multi-user.target

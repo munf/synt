@@ -1,0 +1,86 @@
+/* PairSheet (A3, R1 sheet saja): bottom sheet 60%·95% (≤560) utk panel Trenches. */
+
+.psh-root { position: fixed; inset: 0; z-index: 45; display: flex; }
+.psh-sheet { align-items: flex-end; }
+
+.psh-scrim { position: absolute; inset: 0; background: rgb(0 0 0 / 0.55); }
+
+.psh {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  box-shadow: var(--shadow-lg);
+  outline: none;
+}
+
+
+.psh-sheet .psh {
+  width: 100%;
+  height: 60vh;
+  height: 60dvh;
+  border-top: 1px solid var(--line);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  animation: psh-bawah 160ms ease-out;
+  transition: height var(--dur) var(--ease);
+}
+.psh-sheet .psh.psh-full { height: 95vh; height: 95dvh; }
+.psh-sheet .psh.is-dragging { transition: none; }
+
+@keyframes psh-bawah { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.psh-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 var(--sp-3);
+}
+.psh-sheet .psh-bar { touch-action: none; cursor: grab; }
+
+.psh-grip {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: grab;
+}
+.psh-grip::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 36px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: var(--r-full);
+  background: var(--line-strong);
+}
+
+.psh-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+}
+.psh-close:hover { background: var(--panel); color: var(--ink); }
+
+.psh-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--sp-4) var(--sp-5);
+}

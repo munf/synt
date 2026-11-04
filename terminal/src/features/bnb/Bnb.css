@@ -1,0 +1,226 @@
+/* BNB di terminal (butir 14) — tabel memakai .tt (TrenchesTable.css), panel memakai .tp (TokenPanel.css).
+   Di sini hanya yang khas BNB. Warna dari token; nol gradient/glow. */
+
+/* ── Label contoh ── */
+.bnb-contoh-tag {
+  display: inline-block;
+  padding: 1px var(--sp-2);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-xs);
+  color: var(--warn);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.bnb-contoh-note {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--warn);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-base);
+  color: var(--warn);
+  flex-shrink: 0;
+}
+
+.bnb-muted { color: var(--mute); margin: 0; }
+.bnb-small { font-size: var(--fs-sm); }
+.bnb-gap { margin-top: var(--sp-3); }
+.bnb-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Keadaan kosong ── */
+.bnb-empty p { margin: 0; }
+.bnb-empty { display: grid; gap: var(--sp-3); justify-items: center; }
+.bnb-empty-sub { font-size: var(--fs-base); color: var(--mute-2); max-width: 52ch; }
+
+/* ── Tag launchpad / pajak / lulus ── */
+.bnb-tags { display: inline-flex; flex-wrap: wrap; gap: var(--sp-1); min-width: 0; }
+
+.bnb-lp,
+.bnb-tax {
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-base);
+  white-space: nowrap;
+  color: var(--dim);
+}
+
+.bnb-lp.is-fourmeme { color: var(--info); }
+.bnb-tax { color: var(--warn); }
+
+/* ── Tabel ── */
+.bnb-tt .tt-head,
+.bnb-tt .tt-row { min-width: 860px; }
+.bnb-tt.is-compact .tt-head,
+.bnb-tt.is-compact .tt-row { min-width: 620px; }
+.bnb-tt .tt-row:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+.bnb-left { text-align: left; }
+
+/* ── Skor ── */
+.bnb-score { display: flex; flex-direction: column; gap: 2px; font-variant-numeric: tabular-nums; }
+.bnb-score-num { font-family: var(--font-mono); font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--ink); white-space: nowrap; }
+.bnb-score-max { color: var(--mute); font-weight: var(--fw-normal); }
+.bnb-score-measured { margin-left: var(--sp-2); font-size: var(--fs-sm); font-weight: var(--fw-normal); color: var(--mute); font-family: var(--font-sans); }
+.bnb-score-base { font-size: var(--fs-sm); color: var(--mute); white-space: nowrap; }
+.bnb-score-pending { font-size: var(--fs-sm); color: var(--mute); white-space: nowrap; }
+
+/* ── Outcome ── */
+/* A2: chip outcome = `StatusChip` (components/StatusChip.css). */
+
+/* ── Panel ── */
+
+.bnb-addr-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-top: var(--sp-4); }
+
+.bnb-ext {
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+.bnb-ext:hover { color: var(--ink); border-color: var(--line-strong); }
+
+.bnb-open,
+.bnb-back {
+  display: inline-block;
+  margin-top: var(--sp-5);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--dim);
+  text-decoration: none;
+}
+.bnb-open:hover,
+.bnb-back:hover { color: var(--accent); }
+.bnb-back { margin-top: 0; margin-left: auto; }
+
+.bnb-score-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.bnb-score-big {
+  margin: var(--sp-5) 0 var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bnb-score-big .bnb-score-measured { font-size: var(--fs-sm); }
+.bnb-score-what { margin: 0 0 var(--sp-3); font-size: var(--fs-sm); color: var(--mute); }
+.bnb-base-line { margin: var(--sp-3) 0 0; font-size: var(--fs-base); color: var(--dim); line-height: var(--lh-base); }
+.bnb-base-line strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.bnb-sub { margin: var(--sp-5) 0 var(--sp-3); }
+
+.bnb-signals { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.bnb-signals li { display: flex; gap: var(--sp-3); align-items: baseline; font-size: var(--fs-base); color: var(--dim); }
+.bnb-signal-mark { flex-shrink: 0; width: 1.1em; text-align: center; font-weight: var(--fw-bold); }
+.bnb-signals li.is-ok .bnb-signal-mark { color: var(--up); }
+.bnb-signals li.is-bad .bnb-signal-mark { color: var(--down); }
+.bnb-signals li.is-unmeasured { color: var(--mute); }
+.bnb-signals li.is-unmeasured .bnb-signal-mark { color: var(--mute-2); }
+
+.bnb-facts { margin: var(--sp-4) 0 0; display: grid; gap: var(--sp-3); }
+.bnb-facts > div { display: flex; justify-content: space-between; gap: var(--sp-4); font-size: var(--fs-base); }
+.bnb-facts dt { color: var(--mute); }
+.bnb-facts dd { margin: 0; font-family: var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── Kartu kalibrasi ── */
+.bnb-cal p { line-height: var(--lh-base); }
+.bnb-cal-lead { margin: var(--sp-3) 0 0; font-size: var(--fs-base); color: var(--warn); }
+.bnb-cal-lead strong { color: var(--ink); }
+.bnb-cal-what { margin: var(--sp-2) 0 0; font-size: var(--fs-sm); color: var(--dim); }
+.bnb-cal-note { margin: var(--sp-2) 0 0; font-size: var(--fs-sm); color: var(--mute); }
+
+.bnb-cal-table { margin-top: var(--sp-4); display: grid; font-size: var(--fs-base); }
+.bnb-cal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--line-soft, var(--line));
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.bnb-cal-row > span:not(:first-child) { font-family: var(--font-mono); }
+.bnb-cal-row.is-head { font-size: var(--fs-sm); letter-spacing: var(--ls-wide); color: var(--mute); font-weight: var(--fw-semibold); }
+.bnb-cal-row.is-head > span { font-family: inherit; }
+.bnb-cal-row.is-few { color: var(--mute-2); }
+.bnb-cal-row.is-base { color: var(--dim); font-weight: var(--fw-semibold); border-bottom-color: var(--line); }
+.bnb-cal-row.is-quiet { color: var(--mute); border-bottom: none; }
+.bnb-cal-score { font-family: var(--font-mono); font-weight: var(--fw-semibold); }
+
+.bnb-cal-holdout { margin: var(--sp-4) 0 0; font-size: var(--fs-sm); color: var(--dim); }
+.bnb-cal-holdout strong { color: var(--ink); }
+.bnb-cal-lps { margin-top: var(--sp-4); display: grid; gap: var(--sp-2); }
+.bnb-cal-lp { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--dim); }
+.bnb-cal-caveats { margin: var(--sp-4) 0 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--mute); }
+.bnb-cal-foot { margin: var(--sp-4) 0 0; font-size: var(--fs-sm); color: var(--mute-2); }
+
+/* ── Halaman token ── */
+.bnb-page { display: grid; gap: var(--sp-5); }
+
+.bnb-page-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); margin-top: var(--sp-5); }
+
+.bnb-page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: var(--sp-5);
+  align-items: start;
+}
+.bnb-page-main,
+.bnb-page-side { display: grid; gap: var(--sp-5); min-width: 0; }
+.bnb-metrics-wide { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.bnb-chart-card { min-width: 0; }
+.bnb-chart-empty { height: clamp(220px, 32vh, 360px); }
+
+@media (max-width: 1100px) {
+  .bnb-page-grid { grid-template-columns: minmax(0, 1fr); }
+  .bnb-panel { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .bnb-metrics-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bnb-back { margin-left: 0; }
+}
+
+/* ── Slot tata letak Trenches BNB (lihat BnbTrenches.tsx) ── */
+.bnb-slot.is-narrow { display: none; }
+.bnb-slot { flex-shrink: 0; }
+/* panel tertutup di layar lebar: kartu di bawah tabel, tak boleh memakan kolom → tinggi dibatasi & bergulir */
+.tr-main > .bnb-slot-cal.is-closed { max-height: 42%; overflow-y: auto; }
+.tr-panel > .bnb-slot.is-narrow { margin-bottom: var(--sp-5); }
+
+@media (max-width: 1100px) {
+  .bnb-slot.is-wide { display: none; }
+  .bnb-slot.is-narrow { display: block; }
+  .tr-main > .bnb-slot-cal.is-closed { max-height: none; overflow: visible; }
+}
+.tr-main > .bnb-slot-cal.is-closed .bnb-cal { max-width: 760px; }
+
+.bnb-facts-note { margin: var(--sp-3) 0 0; font-size: var(--fs-sm); color: var(--mute-2); }
+.bnb-facts > div { cursor: help; }
+
+/* Ponsel (≤560px, Reviewer putaran 2): SCORE & OUTCOME wajib terlihat tanpa gulir samping → hanya token + skor +
+   outcome; min-width dilepas. `!important` mengalahkan --tt-cols inline (template kolom dari JS). */
+@media (max-width: 560px) {
+  .bnb-tt { --tt-cols: minmax(0, 1fr) auto auto !important; padding: 0 var(--sp-3); }
+  .bnb-tt .tt-head,
+  .bnb-tt .tt-row,
+  .bnb-tt.is-compact .tt-head,
+  .bnb-tt.is-compact .tt-row { min-width: 0; gap: var(--sp-3); padding-left: var(--sp-3); padding-right: var(--sp-3); }
+  .bnb-tt .bnb-c-age,
+  .bnb-tt .bnb-c-mc,
+  .bnb-tt .bnb-c-liq,
+  .bnb-tt .bnb-c-buyers { display: none; }
+  .bnb-tt .tt-token { gap: var(--sp-3); }
+  /* A2: anak pertama sel kini TokenIdentity (bukan avatar) → hanya avatar yang tak menyusut */
+  .bnb-tt .tt-token .avatar { flex-shrink: 0; }
+  .bnb-tt .bnb-score-measured { display: block; margin-left: 0; }
+}
+
+/* 14b: harga basi (price_at lama) — warna peringatan redup, bukan merah */
+.bnb-price-stale { margin: var(--sp-4) 0 0; font-size: var(--fs-sm); color: var(--warn); line-height: var(--lh-base); }
+.bnb-basi { color: var(--mute); }
+.ti-line2 .bnb-tags { flex-wrap: nowrap; }

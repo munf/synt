@@ -1,0 +1,261 @@
+/* R3 (DESIGN §0.4, 28 Okt): ukuran tampak = preview; nilai di luar skala A1 = token LOKAL area (tokens.css milik R1). */
+:root { --pop-lh-item: 1.4; }
+
+.pop {
+  position: absolute;
+  top: calc(100% + var(--sp-3));
+  z-index: 40;
+  width: min(360px, calc(100vw - var(--sp-8)));
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg), var(--edge-top);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: pop-in 120ms ease-out;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pop::-webkit-scrollbar { width: 0; }
+
+.pop-right { right: 0; }
+.pop-left { left: 0; }
+
+@keyframes pop-in {
+  from { transform: translateY(-4px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Isi umum popover ── */
+.pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+}
+
+.pop-title {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.pop-action {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  padding: 0;
+}
+
+.pop-action:hover { text-decoration: underline; }
+
+.pop-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pop-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pop-item:hover { background: var(--panel); }
+
+.pop-item.is-unread { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+
+.pop-item-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pop-item-title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+}
+
+.pop-item-text {
+  font-size: var(--fs-base);
+  color: var(--dim);
+  line-height: var(--pop-lh-item);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.pop-item-time {
+  font-size: var(--fs-sm);
+  color: var(--mute-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pop-empty {
+  padding: var(--sp-8) var(--sp-5);
+  text-align: center;
+  color: var(--mute);
+  font-size: var(--fs-base);
+}
+
+.pop-foot {
+  padding: var(--sp-3) var(--sp-5);
+  border-top: 1px solid var(--line);
+  text-align: center;
+  position: sticky;
+  bottom: 0;
+  background: var(--panel-2);
+}
+
+.pop-foot a {
+  color: var(--dim);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+}
+
+.pop-foot a:hover { color: var(--accent); }
+
+/* Menu sederhana (wallet dropdown) */
+.pop-menu {
+  padding: var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pop-menu a,
+.pop-menu button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.pop-menu a:hover,
+.pop-menu button:hover { background: var(--panel); }
+
+.pop-menu svg { color: var(--mute); flex-shrink: 0; }
+
+.pop-sep {
+  height: 1px;
+  margin: var(--sp-2) 0;
+  background: var(--line);
+}
+
+/* ── Popover ketuk (InfoPopover, A2) ──────────────────────────────────────
+   Pemicu tampil seperti teks biasa + garis bawah titik-titik (penanda "bisa diketuk"); popover 260px, --raise. */
+.ip-trigger {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: help;
+  text-decoration: underline dotted var(--line-strong);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.ip-trigger:hover { text-decoration-color: var(--mute); }
+/* A6: tombol UA mereset huruf besar & jarak huruf → pemicu di label .t-micro (mis. "lower bound" di Metric, kepala
+   kolom) ikut gaya teks sekitarnya, bukan tampil huruf kecil sendiri */
+.ip-trigger { text-transform: inherit; letter-spacing: inherit; }
+
+/* A6: pemicu ikon "?" kecil (sel skor kosong Trenches): target 16px terlihat, area ketuk 28px lewat ::after,
+   supaya sisa sel tetap milik baris (ketukan membuka sheet, bukan popover). */
+.ip-trigger.ip-q {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: var(--sp-1);
+  vertical-align: 1px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  text-decoration: none;
+  color: var(--mute);
+}
+.ip-trigger.ip-q::after { content: ''; position: absolute; inset: -6px; }
+.ip-trigger.ip-q:hover, .ip-trigger.ip-q[aria-expanded='true'] { color: var(--ink); border-color: var(--mute); }
+.ip-trigger.ip-q:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.ip-pop {
+  position: fixed;
+  z-index: 60;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg), var(--edge-top);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  line-height: var(--lh-base);
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+  color: var(--dim);
+  animation: pop-in 120ms ease-out;
+}
+/* panah: segi empat diputar di tepi atas (atau bawah bila popover di atas pemicu) */
+.ip-pop::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: clamp(10px, var(--ip-arrow, 50%), calc(100% - 10px));
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--raise);
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  transform: rotate(45deg);
+}
+.ip-pop.is-above::before { top: auto; bottom: -5px; transform: rotate(225deg); }
+
+/* A6: salinan deskripsi utk pembaca layar (aria-describedby) — tak pernah tampil, walau induk memaksa `display` anak */
+.ip-desc[hidden] { display: none !important; }

@@ -1,0 +1,64 @@
+/* TokenIdentity (A2): satu identitas token utk kedua chain. Tipografi dari kelas peran .t-* (base.css). */
+.ti { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; flex: 1 1 auto; }
+.ti-row { gap: var(--sp-4); }
+.ti-panel, .ti-page { align-items: flex-start; }
+.ti-av { display: inline-flex; flex-shrink: 0; }
+
+.ti-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+
+.ti-line1 { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.ti-symbol {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease);
+}
+.ti-row .ti-symbol { font-weight: var(--fw-semibold); }
+a.ti-symbol:hover { color: var(--accent); }
+
+.ti-name {
+  margin: 0;
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Baris-2: alamat + tag SATU baris, tanpa wrap (DESIGN §2). Yang tak muat terpotong, bukan menambah tinggi baris. */
+.ti-line2 {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ti-line2 > * { flex-shrink: 0; }
+.ti-panel .ti-line2, .ti-page .ti-line2 { margin-top: var(--sp-1); }
+
+.ti-addr {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--mute);
+  white-space: nowrap;
+}
+button.ti-addr {
+  margin-left: calc(-1 * var(--sp-2));
+  padding: 1px var(--sp-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-xs);
+  background: transparent;
+  cursor: pointer;
+}
+button.ti-addr:hover { color: var(--dim); border-color: var(--line); }
+.ti-addr svg { opacity: 0.7; }
+
+/* Halaman token di ponsel: avatar 40 (DESIGN §1.3). */
+@media (max-width: 760px) {
+  .ti-page .avatar-xl { width: var(--av-lg); height: var(--av-lg); font-size: var(--fs-xl); }
+}

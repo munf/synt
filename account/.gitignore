@@ -1,0 +1,5 @@
+target/
+.env
+# cadangan .env buatan synt-env (memuat rahasia) — jangan pernah dilacak
+.env.*
+!.env.example

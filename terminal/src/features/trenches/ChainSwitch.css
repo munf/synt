@@ -1,0 +1,73 @@
+/* Pilihan chain Trenches (butir 14). Bentuk = segmen ViewBar (permukaan --surface-2, aktif = lime redup). */
+
+.tcs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.tcs-seg {
+  display: flex;
+  gap: var(--sp-0);
+  padding: var(--sp-0);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm), var(--edge-top);
+}
+
+.tcs-opt {
+  min-width: 64px;
+  height: 32px;
+  padding: 0 var(--sp-4);
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--mute);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-caps);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.tcs-opt:hover { color: var(--ink); background: var(--panel); }
+
+.tcs-opt.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.tcs-caption {
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Kepala kolom tabel (layar lebar). Di ≤1100px pilihan chain pindah ke ViewBar (sebelum panel). */
+.tr-chainbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1100px) {
+  .tr-chainbar { display: none; }
+  .tvb.has-chain .tcs-opt { height: 36px; }
+}
+
+/* Ponsel: segmen tampilan butuh lebar penuh → chain di baris sendiri. */
+@media (max-width: 560px) {
+  .tvb.has-chain { flex-wrap: wrap; }
+  .tvb.has-chain > .tcs { flex: 1 0 100%; }
+  .tvb.has-chain > .tcs .tcs-seg { flex: 1; }
+  .tvb.has-chain > .tcs .tcs-opt { flex: 1; }
+}

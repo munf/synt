@@ -1,0 +1,182 @@
+/* Privacy & Terms (1 Nov) — prosa panjang di kartu akun; lebar baris dijaga ±70 karakter oleh .ac (720px). */
+
+.lg-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-6);
+  border-bottom: 1px solid var(--line);
+}
+
+.lg-head h1 {
+  margin: 0;
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  text-wrap: balance;
+}
+
+.lg-draf {
+  align-self: flex-start;
+  margin: 0 0 var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--accent);
+}
+
+.lg-meta {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.lg-isi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  font-size: var(--fs-base);
+  line-height: var(--lh-relaxed);
+  min-width: 0;
+}
+
+.lg-isi h2 {
+  margin: var(--sp-4) 0 0;
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+
+.lg-isi h3 {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.lg-isi p,
+.lg-isi ul,
+.lg-isi ol { margin: 0; }
+
+.lg-isi ul,
+.lg-isi ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-left: var(--sp-6);
+}
+
+/* pasal bernomor (1), (2) seperti naskah perjanjian; huruf a, b untuk rincian */
+.lg-isi ol:not([type]) { list-style: none; counter-reset: ayat; }
+.lg-isi ol:not([type]) > li { counter-increment: ayat; position: relative; }
+.lg-isi ol:not([type]) > li::before {
+  content: '(' counter(ayat) ')';
+  position: absolute;
+  right: calc(100% + var(--sp-2));
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+.lg-isi ol ol { margin-top: var(--sp-2); }
+
+.lg-ringkas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel-3);
+}
+.lg-ringkas h2 { margin: 0; }
+
+.lg-atas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.lg-atas .lg-draf { margin: 0; }
+
+.lg-bahasa {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+}
+.lg-bahasa button {
+  min-width: 44px;
+  min-height: 32px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+.lg-bahasa button[aria-pressed='true'] { background: var(--ink); color: var(--on-bright); }
+
+.lg-isi a { color: var(--accent); }
+
+.lg-isi code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+}
+
+/* tabel data: di layar sempit bergulir sendiri (wadah), halaman tak ikut melebar */
+.lg-tabel-wadah { overflow-x: auto; min-width: 0; }
+.lg-tabel {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.lg-tabel th,
+.lg-tabel td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  min-width: 140px;
+}
+
+.lg-tabel th {
+  font-weight: var(--fw-semibold);
+  color: var(--dim);
+}
+
+/* base.css membuat semua `table td` mono (angka); tabel ini prosa */
+.lg-tabel td { font-family: var(--font-sans); }
+
+/* HP: tiap baris jadi kartu bertumpuk (label kolom dari data-label) — tabel 3 kolom tak terbaca di 390px */
+@media (max-width: 560px) {
+  .lg-tabel,
+  .lg-tabel tbody,
+  .lg-tabel tr,
+  .lg-tabel td { display: block; }
+  .lg-tabel thead { display: none; }
+  .lg-tabel tr {
+    padding: var(--sp-2) 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .lg-tabel td {
+    min-width: 0;
+    padding: var(--sp-1) 0;
+    border: 0;
+  }
+  .lg-tabel td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--mute);
+  }
+}

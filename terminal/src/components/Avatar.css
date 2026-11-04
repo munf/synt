@@ -1,0 +1,36 @@
+/* Avatar (A2): inisial selalu di bawah, gambar menutupinya hanya setelah termuat → tak ada kotak kosong. */
+.avatar {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--raise);
+  color: var(--dim);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-none);
+  vertical-align: middle;
+}
+
+.avatar-square { border-radius: var(--r-md); }
+.avatar-circle { border-radius: var(--r-full); }
+
+/* Ukuran token (DESIGN §1.3): 24 / 32 / 40 / 48. */
+.avatar-sm { width: var(--av-sm); height: var(--av-sm); font-size: var(--fs-sm); }
+.avatar-md { width: var(--av-md); height: var(--av-md); font-size: var(--fs-md); }
+.avatar-lg { width: var(--av-lg); height: var(--av-lg); font-size: var(--fs-xl); }
+.avatar-xl { width: var(--av-xl); height: var(--av-xl); font-size: var(--fs-3xl); }
+
+.avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.avatar.is-loaded .avatar-img { opacity: 1; }
+/* Gambar sudah menutupi: inisial disembunyikan dari tata letak visual (tetap aria-hidden). */
+.avatar.is-loaded .avatar-initial { visibility: hidden; }

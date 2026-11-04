@@ -1,0 +1,68 @@
+/* Trenches — R1 (28 Okt, DESIGN-TERMINAL §0): tata letak = preview (`master` routes/Trenches.css).
+     > 1100px  rail · panel 384 · tabel; tinggi persis satu layar di bawah topbar, hanya panel & tabel yang menggulir.
+     561-1100  panel lebar penuh di atas tabel, halaman menggulir biasa (preview).
+     ≤ 560     tabel saja; panel = bottom sheet (PairSheet, fungsi lab §0.2). */
+
+.tr {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-5);
+  /* Yang dikurangi: topbar + padding .shell-main (--sp-5 & --sp-8) + footer (AppShell.css) */
+  height: calc(100vh - var(--topbar-h) - var(--sp-5) - var(--sp-8) - var(--footer-h));
+  min-height: 0;
+}
+
+.tr-col { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-5); }
+.tr-body { flex: 1; min-height: 0; min-width: 0; display: flex; gap: var(--sp-5); }
+
+.tr-panel {
+  flex: 0 0 var(--tr-panel-w);
+  width: var(--tr-panel-w);
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Scrollbar disembunyikan (memotong sudut kartu); guliran tetap jalan. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tr-panel::-webkit-scrollbar { width: 0; height: 0; }
+
+.tr-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
+/* Tabel mengisi tinggi kolom; gulirannya ditangani .pt sendiri (kepala sticky) */
+.tr-main > .pt { flex: 1; min-height: 0; }
+
+.tr-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3) var(--sp-5);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  color: var(--mute);
+}
+
+.tr-stale { margin: 0; font-size: var(--fs-sm); color: var(--warn); }
+
+.tr-empty {
+  margin: 0;
+  padding: var(--sp-9) var(--sp-6);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-xl);
+  text-align: center;
+  color: var(--mute);
+  font-size: var(--fs-lg);
+}
+.tr-empty strong { color: var(--dim); overflow-wrap: anywhere; }
+
+/* A6: keadaan kosong karena filter (kalimat + tombol) */
+.tr-empty-t { margin: 0; }
+
+/* ≤1100: panel & tabel bertumpuk, tinggi tetap dilepas, halaman menggulir (preview) */
+@media (max-width: 1100px) {
+  .tr { flex-direction: column; height: auto; }
+  .tr-body { flex: none; flex-direction: column; }
+  .tr-panel { flex: none; width: 100%; height: auto; overflow: visible; }
+  .tr-main { overflow: visible; }
+  .tr-main > .pt { flex: none; }
+}

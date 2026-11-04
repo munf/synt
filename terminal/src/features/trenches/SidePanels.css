@@ -1,0 +1,378 @@
+/* R3 (DESIGN §0.4, 28 Okt): ukuran tampak = preview, lewat token bersama (--lh-relaxed, --fs-body-md). */
+
+/* Gaya bersama untuk isi Drawer: quick buy, wallet, search. */
+
+.sp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-7);
+}
+
+.sp-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.sp-label {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.sp-hint {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+  line-height: var(--lh-relaxed);
+}
+
+/* ── Input ── */
+.sp-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel-3);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+}
+
+.sp-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.sp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.sp-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.sp-value {
+  min-width: 56px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Preset ── */
+.sp-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.sp-preset {
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.sp-preset:hover { color: var(--ink); border-color: var(--line-strong); }
+
+.sp-preset.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ── Checkbox ── */
+.sp-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  cursor: pointer;
+}
+
+.sp-check input { margin-top: 3px; accent-color: var(--accent); }
+
+.sp-check span {
+  font-size: var(--fs-lg);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-check em {
+  font-style: normal;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+/* ── Daftar ── */
+.sp-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.sp-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.sp-item:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--panel);
+}
+
+.sp-item:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.sp-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sp-item-name {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-item-hint {
+  font-size: var(--fs-base);
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-item-nums {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-item-mc { color: var(--dim); }
+
+.sp-item-tag {
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--panel-3);
+  color: var(--mute);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+/* ── Search ── */
+.sp-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sp-search > svg {
+  position: absolute;
+  left: var(--sp-4);
+  color: var(--mute);
+  pointer-events: none;
+}
+
+.sp-input-search {
+  padding-left: 38px;
+  font-family: var(--font-sans);
+}
+
+.sp-clear {
+  position: absolute;
+  right: var(--sp-3);
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--panel);
+  color: var(--dim);
+  font-size: var(--fs-body-md);
+  line-height: var(--lh-none);
+  cursor: pointer;
+}
+
+.sp-clear:hover { color: var(--ink); }
+
+/* ── Kosong ── */
+.sp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-5);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-xl);
+  text-align: center;
+  color: var(--mute-2);
+}
+
+.sp-empty h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.sp-empty p {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.sp-note {
+  margin: 0;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-base);
+  color: var(--mute-2);
+}
+
+/* Butir 6: alamat mint sah → lompat ke halaman token */
+.sp-jump {
+  text-decoration: none;
+  border-color: var(--accent);
+}
+
+.sp-jump:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sp-jump-addr {
+  font-family: var(--font-mono);
+}
+
+.sp-jump-key {
+  flex-shrink: 0;
+  padding: 1px var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-sm);
+  color: var(--mute);
+}
+
+/* Tanda "Enter" tak berarti di layar sentuh / sempit */
+@media (pointer: coarse), (max-width: 560px) {
+  .sp-jump-key { display: none; }
+}
+
+/* B1: dua bagian hasil — "In this view" (baris tampilan aktif) & "All tokens" (/api/search) */
+.sp-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.sp-sec-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.sp-sec-title span {
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--mute);
+}
+
+.sp-sec-note {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+  overflow-wrap: anywhere;
+}
+
+.sp-sec-note strong { color: var(--ink); }
+
+.sp-retry {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sp-list.is-stale { opacity: 0.55; }
+
+.sp-hit { text-decoration: none; }
+
+.sp-hit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sp-hit-mint { font-family: var(--font-mono); }
+
+.sp-hit-hint { display: flex; gap: 0.35em; min-width: 0; }
+.sp-hit-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-hit-hint .sp-hit-mint { flex-shrink: 0; }
+
+/* Login wallet (MasukPanel, 1 Nov): item berupa tautan (pasang wallet / profil) memakai gaya tombol yang sama */
+a.sp-item { text-decoration: none; }
+.sp-mono { font-family: var(--font-mono); }
+.sp-galat {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--down);
+  border-radius: var(--r-md);
+  font-size: var(--fs-base);
+  color: var(--down);
+}
+
+/* 1 Nov: catatan kedua (tautan Terms/Privacy) menempel ke catatan pertama, tanpa garis ganda */
+.sp-note + .sp-note { padding-top: 0; border-top: 0; }
+.sp-note a { color: var(--accent); }
+/* ikon wallet dari ekstensinya sendiri (Wallet Standard) */
+.sp-item-ikon { flex-shrink: 0; width: 24px; height: 24px; border-radius: var(--r-xs); }
+/* kelompok jaringan di daftar wallet login */
+.sp-rantai {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--mute);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

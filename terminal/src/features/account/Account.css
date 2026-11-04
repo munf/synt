@@ -1,0 +1,324 @@
+/* R3 (DESIGN §0.4, 28 Okt): ukuran tampak = preview, lewat token bersama (--fs-title-md, --lh-relaxed). */
+
+/* Halaman akun: profile, messages, notifications, settings. */
+
+.ac {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.ac-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm), var(--edge-top);
+}
+
+.ac-section-title {
+  margin: 0;
+  padding: var(--sp-5) var(--sp-6);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Profil ── */
+.ac-cover {
+  height: 110px;
+  background: var(--panel-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.ac-profile-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-6);
+  margin-top: -44px;
+}
+
+.ac-profile-head .avatar {
+  border: 3px solid var(--panel);
+}
+
+.ac-profile-actions { padding-bottom: var(--sp-3); }
+
+.ac-btn {
+  padding: var(--sp-3) var(--sp-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.ac-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.ac-btn.is-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-bright);
+}
+
+.ac-btn.is-primary:hover { background: var(--dim); border-color: var(--dim); color: var(--on-bright); }
+
+.ac-identity { padding: var(--sp-5) var(--sp-6) 0; }
+
+.ac-name {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-title-md);
+  font-weight: var(--fw-bold);
+}
+
+.ac-handle {
+  margin: 2px 0 0;
+  font-size: var(--fs-lg);
+  color: var(--mute);
+}
+
+.ac-bio {
+  margin: var(--sp-4) 0 0;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-base);
+  color: var(--dim);
+}
+
+.ac-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-4) 0 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.ac-dot { color: var(--line-strong); }
+.ac-wallet { font-family: var(--font-mono); }
+
+.ac-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-7);
+  margin: var(--sp-5) 0 0;
+  padding: var(--sp-5) var(--sp-6);
+  border-top: 1px solid var(--line);
+}
+
+/* A2: `.ac-stat` = `Metric` varian `count` (components/Metric.css). */
+
+.ac-empty {
+  margin: 0;
+  padding: var(--sp-9) var(--sp-6);
+  text-align: center;
+  color: var(--mute);
+  font-size: var(--fs-lg);
+}
+
+/* ── Daftar (messages, notifications) ── */
+.ac-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ac-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-5) var(--sp-6);
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ac-list li:last-child .ac-row { border-bottom: none; }
+
+.ac-row:hover { background: var(--panel-3); }
+
+.ac-row.is-unread { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.ac-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+.ac-row-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.ac-row-text {
+  font-size: var(--fs-base);
+  color: var(--dim);
+  line-height: var(--lh-relaxed);
+}
+
+.ac-row-time {
+  font-size: var(--fs-base);
+  color: var(--mute-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ac-unread-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Settings ── */
+.ac-setting {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-6);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.ac-setting:last-child { border-bottom: none; }
+
+.ac-setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ac-setting-name { font-size: var(--fs-lg); font-weight: var(--fw-medium); }
+
+.ac-setting-hint {
+  font-size: var(--fs-base);
+  color: var(--mute);
+  line-height: var(--lh-relaxed);
+}
+
+/* Sakelar */
+.ac-switch {
+  position: relative;
+  width: 40px;
+  height: 23px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--line);
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.ac-switch[aria-checked='true'] { background: var(--accent); }
+
+.ac-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: var(--r-full);
+  background: var(--ink);
+  transition: transform 140ms ease;
+}
+
+.ac-switch[aria-checked='true']::after { transform: translateX(17px); }
+
+@media (max-width: 620px) {
+  .ac-stats { gap: var(--sp-5); }
+  .ac-profile-head { margin-top: -36px; }
+}
+
+/* ── Akun nyata (synt-akun, 1 Nov): panel login & form edit profil ── */
+.ac-pad { padding: var(--sp-6); }
+
+.ac-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.ac-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.ac-label {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.ac-input {
+  width: 100%;
+  min-height: 38px;
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel-3);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+}
+
+.ac-input:focus { outline: none; border-color: var(--accent); }
+
+.ac-textarea { resize: vertical; line-height: var(--lh-relaxed); }
+
+.ac-hint {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.ac-galat {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--down);
+  border-radius: var(--r-md);
+  font-size: var(--fs-base);
+  color: var(--down);
+}
+
+.ac-form-aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+}
+
+.ac-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* tanpa blok statistik (akun nyata, 1 Nov) identitas jadi isi terakhir kartu → beri jarak bawah sendiri */
+.ac-identity:last-child { padding-bottom: var(--sp-6); }
+
+/* tombol tindakan tak-terbalikkan (hapus akun): merah redup, bukan aksen lime */
+.ac-btn.is-bahaya { border-color: var(--down); color: var(--down); }
+.ac-btn.is-bahaya:hover { background: var(--down); color: var(--on-bright); }
+.ac-hint a { color: var(--accent); }
+
+/* Settings: keterangan di mana preferensi disimpan (tahap B) */
+.ac-sinkron { padding: 0 var(--sp-2); }
+
+/* Inbox (tahap C): judul + aksi "Mark all read" dalam satu baris; h1 mewarisi ukuran judul kartu */
+.ac-title-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.ac-title-row h1 { margin: 0; font: inherit; }
+/* galat di luar kartu (tombol Follow di profil) — selebar kolom akun */
+.ac-galat-luar { max-width: 720px; margin: var(--sp-4) auto 0; }

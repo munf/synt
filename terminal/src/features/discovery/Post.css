@@ -1,0 +1,269 @@
+/* R3 (DESIGN §0.4, 28 Okt): ukuran tampak = preview, lewat token bersama (--fs-body-lg, --lh-prose). */
+
+/* Halaman post + komentar. Kolom tunggal — di sini pengguna sedang membaca
+   satu hal, bukan memindai banyak. */
+
+.pv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.pv-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.pv-back:hover { color: var(--ink); border-color: var(--line-strong); }
+
+.pv-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  padding: var(--sp-6);
+}
+
+/* ── Post ── */
+.pv-author {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  text-decoration: none;
+  color: inherit;
+}
+
+.pv-author-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.pv-author-name {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+}
+
+.pv-author:hover .pv-author-name { color: var(--accent); }
+
+.pv-author-handle {
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.pv-body {
+  margin: var(--sp-5) 0 0;
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-prose);
+  color: var(--ink);
+}
+
+.pv-stats {
+  display: flex;
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line-soft);
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.pv-stats strong {
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-acts {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.pv-act {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pv-act:hover { color: var(--ink); border-color: var(--line-strong); }
+.pv-act.is-liked { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, transparent); }
+
+/* ── Composer ── */
+.pv-composer {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+}
+
+.pv-composer-main { flex: 1; min-width: 0; }
+
+.pv-input {
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel-3);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-base);
+  resize: vertical;
+}
+
+.pv-input:focus { outline: none; border-color: var(--accent); }
+.pv-input::placeholder { color: var(--mute); }
+
+.pv-composer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+.pv-hint { font-size: var(--fs-base); color: var(--mute-2); }
+
+.pv-submit {
+  padding: var(--sp-2) var(--sp-6);
+  border: none;
+  border-radius: var(--r-full);
+  background: var(--ink);
+  color: var(--on-bright);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+
+.pv-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+.pv-submit:not(:disabled):hover { background: var(--dim); }
+
+/* ── Komentar ── */
+.pv-section {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-5);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+}
+
+.pv-count {
+  padding: 1px var(--sp-3);
+  border-radius: var(--r-full);
+  background: var(--panel-3);
+  color: var(--dim);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+}
+
+.pv-list, .pv-replies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pv-list > li {
+  padding: var(--sp-4) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.pv-list > li:last-child { border-bottom: none; padding-bottom: 0; }
+.pv-list > li:first-child { padding-top: 0; }
+
+/* Balasan: garis vertikal menandai kedalaman tanpa indentasi berlebihan. */
+.pv-replies {
+  margin: var(--sp-4) 0 0 var(--sp-7);
+  padding-left: var(--sp-5);
+  border-left: 2px solid var(--line);
+  gap: var(--sp-4);
+}
+
+.pv-comment { display: flex; gap: var(--sp-4); }
+
+.pv-comment-body { flex: 1; min-width: 0; }
+
+.pv-comment-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.pv-comment-name {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.pv-comment-name:hover { color: var(--accent); }
+
+.pv-comment-handle, .pv-comment-time {
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.pv-comment-text {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-base);
+  color: var(--dim);
+}
+
+.pv-comment-acts {
+  display: flex;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+}
+
+.pv-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border: none;
+  background: transparent;
+  color: var(--mute);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-mini:hover { color: var(--ink); }
+.pv-mini.is-liked { color: var(--down); }
+
+.pv-empty {
+  margin: 0;
+  padding: var(--sp-8) 0;
+  text-align: center;
+  color: var(--mute);
+  font-size: var(--fs-lg);
+}
+
+.pv-empty a { color: var(--accent); }

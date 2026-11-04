@@ -1,0 +1,101 @@
+/* Bar tampilan Trenches utk layar sempit — hanya tampil saat rail disembunyikan (≤1100px, lihat SideRail.css).
+   Bentuk mengikuti rail: permukaan --surface-2, border --line, aktif = aksen lime redup (sama dgn .rail-btn.is-active). */
+
+.tvb { display: none; }
+
+@media (max-width: 1100px) {
+  .tvb {
+    display: flex;
+    align-items: stretch;
+    gap: var(--sp-3);
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Tablet: segmen tak melebar sepanjang layar (label kecil di tombol 250px sulit dibidik mata); search di kanan. */
+  .tvb-seg {
+    flex: 1;
+    min-width: 0;
+    max-width: 520px;
+    display: flex;
+    gap: var(--sp-0);
+    padding: var(--sp-0);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm), var(--edge-top);
+  }
+
+  .tvb-opt {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 36px;
+    padding: 0 var(--sp-2);
+    border: none;
+    border-radius: var(--r-md);
+    background: transparent;
+    color: var(--mute);
+    font-family: inherit;
+    font-size: var(--fs-base);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+  }
+
+  .tvb-opt:hover { color: var(--ink); background: var(--panel); }
+
+  .tvb-opt.is-active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .tvb-search {
+    flex-shrink: 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    min-width: 42px;
+    max-width: 40%;
+    padding: 0 var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface-2);
+    box-shadow: var(--shadow-sm), var(--edge-top);
+    color: var(--mute);
+    font-family: inherit;
+    font-size: var(--fs-base);
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease);
+  }
+
+  .tvb-search svg { flex-shrink: 0; }
+  .tvb-search:hover { color: var(--ink); }
+  .tvb-search.is-active { color: var(--accent); }
+
+  .tvb-search-q {
+    min-width: 0;
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+}
+
+/* Ponsel: teks pencarian di tombol memotong label tampilan ("New P…", terlihat di 390px) → tombol jadi ikon saja;
+   warna aksen tetap menandai daftar sedang disaring, dan aria-label tetap menyebut kuerinya. */
+@media (max-width: 560px) {
+  .tvb-search-q { display: none; }
+}
+
+/* Layar sangat sempit (320-380px): ruang dirapatkan supaya keempat label tetap utuh (terukur di 320 dulu "New P…"). */
+@media (max-width: 380px) {
+  .tvb { gap: var(--sp-2); }
+  .tvb-opt { font-size: var(--fs-sm); padding: 0; letter-spacing: var(--ls-tight); }
+  .tvb-search { min-width: 36px; padding: 0 var(--sp-2); }
+}

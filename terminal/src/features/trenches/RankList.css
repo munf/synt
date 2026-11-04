@@ -1,0 +1,94 @@
+/* Daftar peringkat ringkas — kolom kanan frame 3:2. Baris 56px, gap 40px
+   antar kolom angka. */
+
+.rl {
+  --rl-cols: minmax(160px, 1fr) 90px 90px 70px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rl-head {
+  display: grid;
+  grid-template-columns: var(--rl-cols);
+  gap: var(--sp-6);
+  align-items: center;
+  padding: 0 var(--sp-5) var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
+  color: var(--mute);
+}
+
+.rl-row {
+  display: grid;
+  grid-template-columns: var(--rl-cols);
+  gap: var(--sp-6);
+  align-items: center;
+  min-height: 56px;
+  padding: 0 var(--sp-5);
+  border: 1px solid transparent;
+  border-radius: var(--r-lg);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.rl-row:hover { background: var(--panel); }
+
+.rl-row.is-active {
+  background: var(--panel);
+  border-color: var(--accent);
+}
+
+.rl-token {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.rl-rank {
+  width: 18px;
+  flex-shrink: 0;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--mute-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-rank.is-top { color: var(--warn); }
+
+.rl-id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rl-symbol {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rl-handle {
+  font-size: var(--fs-base);
+  color: var(--mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rl-num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rl-score { font-weight: var(--fw-bold); }
+
+.rl .ta-r { text-align: right; }

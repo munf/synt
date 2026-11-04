@@ -1,0 +1,85 @@
+/* PairToolbar (A6): jumlah · chip filter · Sort ringkas. Chip = bentuk segmen ChainSwitch (--surface-2, aktif lime
+   redup), tinggi 28 (target ketuk penuh di ponsel lewat padding baris). */
+
+.ptb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.ptb-count {
+  margin: 0;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  color: var(--mute);
+  overflow-wrap: anywhere;
+}
+.ptb-count b { font-weight: var(--fw-semibold); color: var(--ink); }
+.ptb-q { color: var(--dim-2); font-family: var(--font-sans); }
+.ptb-note { font-family: var(--font-sans); }
+
+.ptb-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+.ptb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 28px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--dim-2);
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.ptb-chip:hover { color: var(--ink); border-color: var(--line-strong); }
+.ptb-chip.is-on {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ptb-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ptb-chip-x { font-size: var(--fs-xs); }
+
+.ptb-sort { display: inline-flex; align-items: center; gap: var(--sp-2); margin-left: auto; min-width: 0; }
+.ptb-sort-l { font-size: var(--fs-sm); color: var(--mute); }
+.ptb-select {
+  height: 28px;
+  max-width: 190px;
+  min-width: 0;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+.ptb-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Layar lebar: bar berbagi baris dgn pilihan chain → rata kanan */
+.tr-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3) var(--sp-4); min-width: 0; flex-shrink: 0; }
+.tr-bar > .ptb { flex: 1 1 auto; justify-content: flex-start; }
+/* R1: chip tepat di sebelah keterangan chain; jumlah di ujung kanan */
+.ptb > .ptb-count { margin-left: auto; }
+.ptb > .ptb-sort { margin-left: 0; }
+
+/* Keadaan kosong karena filter: kalimat + tombol hapus filter */
+.tr-empty .ptb-clear {
+  margin-top: var(--sp-4);
+  height: 32px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-size: var(--fs-base);
+  color: var(--ink);
+}
+.tr-empty .ptb-clear:hover { border-color: var(--line-strong); }
+.tr-empty .ptb-clear:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

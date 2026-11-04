@@ -1,0 +1,19 @@
+/* ScoreCell (A2): gaya angka/base rate per chain tetap di TrenchesTable.css (.tt-score*) & Bnb.css (.bnb-score*) —
+   dibekukan s/d keputusan pemilik DESIGN §6. Di sini hanya nada opsional dari base rate (`nada="base"`). */
+.sk-tone-0 { color: var(--tone-0); }
+.sk-tone-1 { color: var(--tone-1); }
+.sk-tone-2 { color: var(--tone-2); }
+.sk-tone-3 { color: var(--tone-3); }
+.sk-tone-4 { color: var(--tone-4); }
+
+/* A3: ScoreBadge (sel skor bersama Trenches SOL & BNB) */
+.scb { display: inline-flex; flex-direction: column; gap: 1px; min-width: 0; line-height: var(--lh-tight); }
+.scb-top { display: inline-flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.scb-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.scb-max { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--mute); letter-spacing: 0; }
+.scb .tt-spark { flex-shrink: 0; }
+.scb-base { font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--dim-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scb-base b { font-family: var(--font-mono); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.scb-empty-t { font-size: var(--fs-base); font-weight: var(--fw-medium); color: var(--dim-2); white-space: nowrap; }
+.scb-empty-s { font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--mute); white-space: nowrap; }
+.scb-measured { font-size: var(--fs-sm); color: var(--mute); white-space: nowrap; }

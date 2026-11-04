@@ -1,0 +1,294 @@
+/* Trading terminal (lab, 2 Nov): panel beli/jual, kartu status, dialog tinjau. Hanya token desain. */
+
+/* ── panel ── */
+.cd-trade-tabs .is-sell.is-active {
+  background: color-mix(in srgb, var(--down) 16%, transparent);
+  border-color: var(--down);
+  color: var(--down);
+}
+
+.cd-buy-btn.is-sell { background: var(--down); color: var(--on-bright); }
+
+.cd-presets button.is-active { border-color: var(--accent); color: var(--accent); }
+.cd-presets button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.tr-saldo {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-maks,
+.tr-aturan-tombol {
+  display: block;
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--mute);
+  font: inherit;
+  font-size: var(--fs-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tr-maks:hover,
+.tr-aturan-tombol:hover { color: var(--ink); }
+
+.tr-aturan-tombol { margin-top: var(--sp-4); text-align: center; width: 100%; }
+
+.tr-perkiraan {
+  margin: var(--sp-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  color: var(--dim);
+}
+
+.tr-aturan {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+.tr-aturan label { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+.tr-aturan span { font-size: var(--fs-sm); color: var(--mute); }
+.tr-aturan-ket { margin: 0; align-self: end; font-size: var(--fs-sm); color: var(--mute); }
+
+.tr-aturan input {
+  width: 100%;
+  height: 34px;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel-3);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+}
+
+.tr-aturan input:focus { outline: none; border-color: var(--accent); }
+
+/* ── kartu status ── */
+.tr-toasts {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  /* di atas footer status mesin (±44px) */
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: min(360px, calc(100vw - 32px));
+}
+
+.tr-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
+}
+
+.tr-toast.is-berhasil { border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
+.tr-toast.is-gagal { border-color: color-mix(in srgb, var(--down) 45%, var(--line)); }
+
+.tr-toast-ikon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-full);
+  background: var(--panel-3);
+  color: var(--mute);
+}
+
+.tr-toast.is-berhasil .tr-toast-ikon { background: color-mix(in srgb, var(--up) 18%, transparent); color: var(--up); }
+.tr-toast.is-gagal .tr-toast-ikon { background: color-mix(in srgb, var(--down) 18%, transparent); color: var(--down); }
+
+.tr-putar {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: var(--r-full);
+  animation: tr-putar 0.8s linear infinite;
+}
+
+@keyframes tr-putar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tr-putar { animation-duration: 2.4s; }
+}
+
+.tr-toast-isi { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tr-toast-isi strong { font-size: var(--fs-lg); font-weight: var(--fw-semibold); overflow-wrap: anywhere; }
+.tr-toast-isi span { font-size: var(--fs-base); color: var(--dim); overflow-wrap: anywhere; }
+.tr-toast-isi a { font-size: var(--fs-base); color: var(--accent); }
+
+.tr-toast-tutup {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+}
+
+.tr-toast-tutup:hover { color: var(--ink); background: var(--panel-3); }
+
+/* ── dialog tinjau ── */
+.tr-latar {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+
+.tr-dialog {
+  width: min(420px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: var(--sp-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
+}
+
+.tr-dialog h2 { margin: 0 0 var(--sp-4); font-size: var(--fs-xl); font-weight: var(--fw-bold); }
+
+.tr-segar { margin: 0 0 var(--sp-3); font-size: var(--fs-base); color: var(--warn); }
+
+.tr-rincian { margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+
+.tr-rincian div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-4);
+}
+
+.tr-rincian dt { font-size: var(--fs-base); color: var(--mute); }
+
+.tr-rincian dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.tr-rincian .tr-utama { font-size: var(--fs-lg); font-weight: var(--fw-semibold); }
+.tr-rincian .tr-awas { color: var(--warn); }
+
+.tr-peringatan {
+  margin: var(--sp-4) 0 0;
+  padding: var(--sp-3);
+  border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  font-size: var(--fs-base);
+  color: var(--warn);
+}
+
+.tr-catatan { margin: var(--sp-4) 0 0; font-size: var(--fs-sm); color: var(--mute-2); line-height: 1.5; }
+
+.tr-aksi { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-5); }
+
+.tr-aksi button {
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+
+.tr-batal { border: 1px solid var(--line); background: transparent; color: var(--ink); }
+.tr-batal:hover { border-color: var(--line-strong); }
+.tr-ok { border: none; color: var(--on-bright); }
+.tr-ok.is-buy { background: var(--accent); }
+.tr-ok.is-sell { background: var(--down); }
+.tr-ok:focus-visible,
+.tr-batal:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── posisi & riwayat ── */
+.tr-tabel { display: flex; flex-direction: column; }
+
+.tr-baris {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--fs-base);
+}
+
+.tr-baris.is-kepala { color: var(--mute); font-size: var(--fs-sm); }
+.tr-baris > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-baris .ta-r { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tr-baris .is-up { color: var(--up); }
+.tr-baris .is-down { color: var(--down); }
+.tr-baris a { color: var(--ink); text-decoration: none; }
+.tr-baris a:hover { color: var(--accent); }
+
+.tr-kosong { margin: 0; padding: var(--sp-6) var(--sp-4); text-align: center; color: var(--mute); font-size: var(--fs-base); }
+
+@media (max-width: 560px) {
+  .tr-baris { grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 1fr)); }
+  .tr-baris > :nth-child(3) { display: none; }
+}
+
+.tr-ringkas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--fs-base);
+  color: var(--dim);
+}
+
+.tr-ringkas b { color: var(--ink); font-family: var(--font-mono); font-weight: var(--fw-semibold); }
+.tr-ringkas .is-up { color: var(--up); }
+.tr-ringkas .is-down { color: var(--down); }
+
+.tr-kaki { margin: 0; padding: var(--sp-3) var(--sp-4); font-size: var(--fs-sm); color: var(--mute-2); line-height: 1.5; }
+
+.tr-kosong { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); }
+.tr-kosong p { margin: 0; }
+
+.tr-masuk {
+  padding: var(--sp-3) var(--sp-5);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.tr-masuk:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }

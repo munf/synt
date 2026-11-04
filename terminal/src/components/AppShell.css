@@ -1,0 +1,287 @@
+/* Topbar — frame Figma: tinggi 60px, logo 56px, search 280px, gap aksi 16px. */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  /* Ruang untuk footer engine yang position:fixed.
+     Dipasang di sini, BUKAN di .shell-main — elemen itu punya flex:1
+     sehingga selalu meregang mengisi sisa tinggi dan padding-nya
+     terlampaui. */
+  padding-bottom: var(--footer-h);
+}
+
+.shell-top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: var(--topbar-h);
+  padding: 0 var(--shell-pad);
+  /* Semi-transparan + blur: konten yang lewat di bawahnya terasa, tanpa
+     mengganggu keterbacaan topbar. */
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ── Logo ── */
+.shell-logo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--r-lg);
+  background: var(--panel-3);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.shell-logo:hover {
+  border-color: var(--line-strong);
+}
+
+/* ── Search ── */
+.shell-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.shell-search svg {
+  position: absolute;
+  left: var(--sp-4);
+  color: var(--mute);
+  pointer-events: none;
+}
+
+.shell-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--sp-4) 0 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+}
+
+.shell-search-input::placeholder {
+  color: var(--mute);
+}
+
+.shell-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Nav tengah ──
+   margin auto di kedua sisi memusatkan nav pada ruang sisa, meniru posisi
+   di desain tanpa mengunci lebar kolom kiri/kanan. */
+.shell-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 auto;
+  padding: var(--sp-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.shell-nav a {
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-md);
+  color: var(--dim);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.shell-nav a:hover {
+  color: var(--ink);
+}
+
+.shell-nav a.active {
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--edge-top), 0 1px 3px rgb(0 0 0 / 0.3);
+}
+
+/* ── Aksi kanan ── */
+.shell-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  flex-shrink: 0;
+}
+
+.shell-icon-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.shell-icon-btn:hover {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.shell-dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--down);
+  border: 2px solid var(--bg);
+}
+
+.shell-wallet {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: 42px;
+  padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.shell-wallet:hover {
+  border-color: var(--accent);
+}
+
+.shell-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  background: var(--panel);
+  flex-shrink: 0;
+}
+
+.shell-wallet svg {
+  color: var(--mute);
+}
+
+/* ── Konten ── */
+.shell-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: var(--sp-5) var(--shell-pad) var(--sp-8);
+}
+
+/* Padding tepi tumbuh bersama layar — pada monitor ultrawide, konten yang
+   menempel ke sisi terasa sesak. Nilai naik bertahap, bukan proporsional:
+   padding yang ikut membesar tanpa batas akan memakan ruang yang justru
+   ingin dipakai. */
+@media (min-width: 1600px) { :root { --shell-pad: var(--sp-8); } }
+@media (min-width: 2200px) { :root { --shell-pad: var(--sp-9); } }
+
+/* Di bawah lebar desain, elemen yang bukan inti disembunyikan bertahap
+   supaya topbar tidak berdesakan. Desain tak mencakup ukuran ini —
+   ini keputusan implementasi, bukan salinan dari Figma. */
+@media (max-width: 1180px) {
+  .shell-search { width: 200px; }
+  .shell-wallet-label { display: none; }
+}
+
+@media (max-width: 900px) {
+  .shell-top { gap: var(--sp-4); padding: 0 var(--sp-4); }
+  .shell-search { display: none; }
+}
+
+/* Di bawah ~700px nav dan tombol aksi tidak muat berdampingan. Nav menang:
+   tanpanya layar lain tak terjangkau, sedangkan mail/notifikasi bisa
+   menunggu menu mobile. min-width:0 mencegah flex item memaksa lebar
+   melebihi kontainer — itulah sumber overflow 2px sebelumnya. */
+@media (max-width: 700px) {
+  .shell-top { gap: var(--sp-3); padding: 0 var(--sp-3); }
+  .shell-icon-btn { display: none; }
+  .shell-nav { margin: 0 auto 0 0; min-width: 0; }
+  .shell-nav a { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-base); }
+  .shell-actions { min-width: 0; }
+  .shell-wallet { padding: var(--sp-1); }
+}
+
+/* Jangkar popover — dropdown diposisikan relatif terhadap pemicunya. */
+.shell-pop-anchor { position: relative; }
+
+.shell-search { position: relative; }
+
+/* ⛔ Menu terkunci — Discovery & Leaderboard sampai backend-nya siap.
+   Bentuknya sama persis dgn `a` agar tata letak nav tak bergeser; yang beda
+   hanya opasitas dan kursor.
+
+   ⚠️ Sengaja TERLIHAT, bukan dihapus: menghilangkannya menyiratkan produk
+   hanya punya satu halaman, padahal keduanya memang sedang dibangun. */
+.shell-nav-locked {
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-md);
+  color: var(--dim);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  opacity: 0.38;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+/* ⚠️ Harus SESUDAH aturan dasar di atas: versi sebelumnya hanya mengecilkan
+   `.shell-nav a` di media 700px, dan aturan dasar ini (ditulis belakangan)
+   mengembalikan padding besar pada item terkunci — di 390px "Leaderboard"
+   menimpa tombol wallet (terlihat di screenshot 2026-10-20). */
+@media (max-width: 700px) {
+  .shell-nav-locked { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-base); }
+}
+
+/* ⛔ Aksi kanan-atas terkunci — pesan, notifikasi, dan akun masih data mock.
+   Dikunci dgn perlakuan yang SAMA seperti Discovery & Leaderboard: bentuknya
+   dipertahankan, hanya kliknya mati.
+
+   ⚠️ Dibiarkan terlihat, bukan dihapus — menghilangkannya menyiratkan produk
+   tak punya akun sama sekali, padahal backend-nya sedang dibangun. */
+.shell-icon-btn.is-locked,
+.shell-wallet.is-locked {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+/* Tahap C: tautan Notifications/Messages di menu akun & titik belum-dibaca di tombol akun HANYA di HP,
+   tempat ikon lonceng/pesan disembunyikan (lihat @media 700px di atas). */
+.pop-menu a.pop-menu-hp,
+.shell-dot-hp { display: none; }
+.shell-wallet { position: relative; }
+@media (max-width: 700px) {
+  .pop-menu a.pop-menu-hp { display: flex; }
+  .shell-dot-hp { display: block; top: 2px; right: 2px; }
+}
+
+/* ikon header (lonceng/pesan) dipakai ulang di menu → samakan ukurannya dgn ikon menu lain */
+.pop-menu a.pop-menu-hp svg { width: 15px; height: 15px; }

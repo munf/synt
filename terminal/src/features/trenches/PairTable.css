@@ -1,0 +1,323 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   PairTable — R1 (28 Okt, DESIGN-TERMINAL §0): gaya = tabel PREVIEW (`master` TrenchesTable.css), nilai px preview
+   lewat token. Grid, bukan <table>: sel bertumpuk & baris bisa dibuka.
+   Kartu menggulir sendiri (dua sumbu, scrollbar tersembunyi) → kepala lengket punya scroll-parent yang benar dan
+   <body> tak pernah ikut bergeser horizontal.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.pt {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm), var(--edge-top);
+  /* Padding horizontal saja: padding vertikal membuat header sticky berhenti di bawahnya */
+  padding: 0 var(--sp-5);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pt::-webkit-scrollbar { width: 0; height: 0; }
+
+.pt-head,
+.pt-row {
+  display: grid;
+  grid-template-columns: var(--pt-cols);
+  gap: var(--sp-4);
+  align-items: center;
+  padding: var(--sp-4) var(--sp-5);
+  /* Panel terbuka: minimum = kolom yang tersisa setelah dibuang agar muat (PairTable `BUANG`) */
+  min-width: var(--pt-min-w, var(--tt-min-w));
+}
+
+.pt-head {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--mute);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel-2);
+  padding-top: var(--sp-5);
+}
+
+.pt-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  padding-bottom: var(--sp-5);
+}
+
+.pt-row {
+  position: relative;
+  min-height: var(--tt-row-h);
+  border-radius: var(--r-md);
+  font-size: var(--fs-lg);
+  color: var(--ink);
+  transition: background-color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.pt-row:hover { background: var(--panel); }
+.pt-row.is-clickable { cursor: pointer; }
+.pt-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Garis putih tipis mengelilingi baris terpilih (preview); aksen dicadangkan utk penilaian */
+.pt-row.is-selected {
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 24%, transparent), 0 0 12px -4px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+/* ── kepala kolom: sortir (A6) dlm gaya kepala preview ── */
+.pt-h { display: inline-flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.pt-h.ta-r { justify-content: flex-end; }
+.pt-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.pt-sort:hover, .pt-sort.is-active { color: var(--ink); }
+.pt-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
+.pt-sort { position: relative; }
+/* panah di luar alur (kiri label rata kanan / kanan label lain) → label tetap di posisi preview */
+.pt-sort-i { position: absolute; left: 100%; margin-left: var(--sp-1); font-family: var(--font-mono); color: var(--line-strong); }
+.pt-h.ta-r .pt-sort-i { left: auto; right: 100%; margin: 0 var(--sp-1) 0 0; }
+.pt-sort:not(.is-active) .pt-sort-i { visibility: hidden; }
+.pt-sort:hover .pt-sort-i, .pt-sort:focus-visible .pt-sort-i { visibility: visible; }
+.pt-sort.is-active .pt-sort-i { color: var(--ink); }
+
+/* chip Provisional (BNB) di kepala Score */
+.ip-trigger.pt-prov-t { text-decoration: none; }
+.pt-prov {
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-base);
+  letter-spacing: var(--ls-caps);
+  color: var(--mute);
+}
+
+/* ── kolom token ── */
+.pt-token { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
+.pt-token > .avatar { width: var(--av-row); height: var(--av-row); }
+.pt-token-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pt-symbol {
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-symbol:hover { color: var(--accent); }
+.pt-mint {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--mute);
+  white-space: nowrap;
+}
+
+/* Tag (P2 SOL "Post-graduation market not loaded"; BNB Name reused / Creator-filled / Tax / launchpad):
+   teks 11px seperti label P2 preview, peringatan amber, sisanya redup */
+.pt-tags { display: flex; flex-wrap: wrap; gap: 0 var(--sp-2); min-width: 0; }
+.pt-tags .ip-trigger { text-decoration: none; }
+.pt-tag { font-size: var(--fs-sm); line-height: var(--lh-tight); color: var(--mute); }
+.pt-tag.is-warn { color: var(--warn); }
+.pt-tags > * + * .pt-tag::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); }
+
+/* BNB: alamat + tag dlm SATU baris setinggi teks. Tag yang tak muat utuh turun ke baris ke-2 yang tersembunyi
+   (hilang utuh, tak pernah terpotong jadi "Name r…"); semua tag tetap di panel. */
+.pt-mintline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--sp-2);
+  min-width: 0;
+  height: calc(var(--fs-sm) * var(--lh-base));
+  line-height: var(--lh-base);
+  overflow: hidden;
+}
+.pt-mintline > .pt-tags { display: contents; }
+.pt-mintline .pt-tag { line-height: var(--lh-base); white-space: nowrap; }
+.pt-mintline .ip-trigger,
+.pt-mintline .pt-tag-w { line-height: var(--lh-base); }
+.pt-mintline > .pt-mint + .pt-tags > :first-child .pt-tag::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); }
+.pt-more { font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pt-more::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); }
+
+/* ── kolom angka ── */
+.pt-cell { min-width: 0; padding-inline: var(--sp-2); }
+.pt-num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pt-stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
+.pt-delta { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+.pt-delta-w { font-family: var(--font-sans); font-weight: var(--fw-normal); color: var(--mute); }
+.pt .is-up { color: var(--up); }
+.pt .is-down { color: var(--down); }
+.pt .is-flat { color: var(--mute); }
+.pt-dim { color: var(--mute-2); }
+.ta-r { text-align: right; }
+
+/* ── skor: angka telanjang (tanpa kotak) + sparkline + base rate ── */
+.pt-score { display: flex; align-items: center; gap: var(--sp-3); }
+.pt-score-num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-score-row);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-tight);
+  min-width: 30px;
+  text-align: right;
+  white-space: nowrap;
+}
+.pt-score-max { font-size: var(--fs-sm); font-weight: var(--fw-medium); letter-spacing: 0; color: var(--mute); }
+.pt-score-side { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+/* ⛔ base rate wajib terbaca: 11px (preview 10px; pengecualian aksesibilitas §0.4) */
+.pt-score-base {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-tight);
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pt .tt-spark { width: 84px; height: 22px; }
+.pt .tt-spark path { fill: none; stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.pt .tt-spark path.is-up { stroke: var(--up); }
+.pt .tt-spark path.is-down { stroke: var(--down); }
+
+/* ── TOP RISK / WHY: chip mono tanpa kotak, dipisah titik, tak pernah melipat ── */
+.pt-risk {
+  display: flex;
+  flex-wrap: wrap;            /* chip yang tak muat utuh turun ke baris ke-2 yang tersembunyi (hilang utuh, N2) */
+  align-items: center;
+  gap: 0 var(--sp-3);
+  height: calc(var(--fs-sm) * var(--lh-base));
+  overflow: hidden;
+  min-width: 0;
+}
+.ip-trigger.pt-risk-t { flex: 0 0 auto; text-decoration: none; font-size: var(--fs-sm); line-height: var(--lh-base); }
+.pt-risk-chip {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--down-strong);
+}
+.pt-risk-chip.is-quiet { font-weight: var(--fw-medium); color: var(--mute); }
+/* Pemisah titik DI DALAM chip mono (preview `.tt-risk-chip + .tt-risk-chip::before`) */
+.pt-risk-t ~ .pt-risk-t .pt-risk-chip::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); font-weight: var(--fw-normal); }
+.pt-risk-none { font-size: var(--fs-base); line-height: var(--lh-tight); color: var(--up); }
+
+/* ── kurva bonding ── */
+.pt-curve { display: flex; align-items: center; gap: var(--sp-3); }
+.pt-curve-track { flex: 1; min-width: 44px; height: 4px; border-radius: var(--r-full); background: var(--line); overflow: hidden; }
+.pt-curve-fill { display: block; height: 100%; background: var(--accent); }
+.pt-curve-val { font-family: var(--font-mono); font-size: var(--fs-base); font-variant-numeric: tabular-nums; color: var(--dim); }
+
+/* ── aksi: chevron detail + Buy ── */
+.pt-actions { display: flex; align-items: center; gap: var(--sp-2); justify-content: flex-end; padding-left: var(--sp-3); }
+.pt-expand {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+.pt-expand:hover { color: var(--ink); background: var(--panel-3); }
+.pt-expand svg { transition: transform var(--dur) var(--ease); }
+.pt-expand svg.is-flipped { transform: rotate(180deg); }
+.pt-buy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.pt-buy:hover { border-color: var(--accent); color: var(--accent); }
+.pt-buy:active { transform: translateY(1px); }
+
+/* ── baris dibuka (preview ExpandPanel) ── */
+.pt-item { border-radius: var(--r-md); transition: background-color var(--dur-fast) var(--ease); min-width: var(--pt-min-w, var(--tt-min-w)); }
+.pt-item.is-expanded { background: var(--panel); }
+.pt-detail {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  padding: 0 var(--sp-5) var(--sp-5) var(--sp-5);
+}
+.pt-detail-main { flex: 1; min-width: 0; }
+.pt-baserate {
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xs);
+  background: var(--panel-3);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--dim);
+}
+.pt-baserate strong { color: var(--ink); font-family: var(--font-mono); }
+.pt-traj-sum { margin: 0; font-size: var(--fs-base); color: var(--mute); }
+.pt-traj-sum strong { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pt-traj-sum .is-down { color: var(--down-strong); }
+.pt-detail-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-3); flex-shrink: 0; }
+.pt-copy {
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--mute);
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  cursor: pointer;
+}
+.pt-copy:hover { color: var(--ink); border-color: var(--line-strong); }
+.pt-open { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--accent); text-decoration: none; white-space: nowrap; }
+.pt-open:hover { text-decoration: underline; }
+
+/* ── skeleton muat pertama ── */
+.pt-row.is-skeleton { cursor: default; }
+.pt-row.is-skeleton:hover { background: transparent; }
+.pt-sk { display: block; height: 10px; width: 64%; border-radius: var(--r-xs); background: var(--raise); }
+.ta-r .pt-sk { margin-left: auto; }
+.pt-sk-av { width: var(--av-row); height: var(--av-row); flex-shrink: 0; border-radius: var(--r-md); }
+.pt-sk-l { width: 96px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-expand svg { transition: none; }
+}
+

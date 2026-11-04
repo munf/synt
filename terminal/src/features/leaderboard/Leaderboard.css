@@ -1,0 +1,278 @@
+/* R3 (DESIGN §0.4, 28 Okt): ukuran tampak = preview, lewat token bersama (--ls-slight). */
+
+/* Leaderboard — frame 3:16. */
+
+/* Dibatasi & dipusatkan: tiga kartu podium yang direntang selebar monitor
+   ultrawide jadi kotak-kotak kosong. Tabel di bawahnya ikut lebar ini
+   supaya kolomnya tetap sejajar dengan podium. */
+.lb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Toggle Trader/Creator ── */
+.lb-toggle {
+  align-self: flex-end;
+  display: inline-flex;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+.lb-toggle button {
+  padding: var(--sp-3) var(--sp-6);
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.lb-toggle button.is-active {
+  background: var(--ink);
+  color: var(--on-bright);
+  font-weight: var(--fw-semibold);
+}
+
+/* ── Podium ──
+   Kartu rank #2 lebih tinggi dan digeser naik seperti desain. Urutan DOM
+   tetap 1,2,3; hanya tampilannya yang bergeser. */
+.lb-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-8);
+  align-items: start;
+  padding-top: var(--sp-8);
+}
+
+.lb-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  padding: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm), var(--edge-top);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.lb-card:hover { transform: translateY(-2px); box-shadow: var(--shadow), var(--edge-top); }
+
+/* Hierarki podium dinyatakan lewat elevasi & posisi, bukan cahaya —
+   tiga kartu bercahaya sekaligus saling meniadakan penekanannya. */
+.lb-card-1 { box-shadow: var(--shadow), var(--edge-top); }
+.lb-card-2 { box-shadow: var(--shadow-lg), var(--edge-top); }
+
+.lb-card-2 {
+  margin-top: calc(var(--sp-8) * -1);
+  padding-bottom: var(--sp-8);
+}
+
+.lb-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lb-badge {
+  padding: 3px var(--sp-3);
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--info) 20%, transparent);
+  color: var(--info-2);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-slight);
+}
+
+.lb-time {
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.lb-card-id {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  text-align: center;
+}
+
+.lb-card-id .avatar {
+  border: 2px solid var(--line);
+}
+
+.lb-name {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+}
+
+.lb-handle {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--mute);
+}
+
+.lb-stats {
+  margin: var(--sp-6) 0 0;
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.lb-stats > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.lb-stats dt {
+  font-size: var(--fs-md);
+  color: var(--dim);
+}
+
+.lb-stats dd {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-spark {
+  width: 100%;
+  height: 48px;
+  margin-top: var(--sp-6);
+  color: var(--accent);
+}
+
+/* ── Tabel ── */
+.lb-table {
+  --lb-cols: 60px minmax(180px, 1.4fr) repeat(3, minmax(100px, 1fr)) 110px;
+  background: var(--surface-2);
+  box-shadow: var(--shadow-sm), var(--edge-top);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  overflow-x: auto;
+  /* Lihat .tt di TrenchesTable.css — alasan yang sama. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lb-table::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.lb-head,
+.lb-row {
+  display: grid;
+  grid-template-columns: var(--lb-cols);
+  gap: var(--sp-5);
+  align-items: center;
+  padding: var(--sp-5) var(--sp-6);
+  min-width: 760px;
+}
+
+.lb-head {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+
+.lb-row {
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--fs-lg);
+}
+
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: var(--panel); }
+
+.lb-rank {
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-trader {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-weight: var(--fw-semibold);
+  min-width: 0;
+}
+
+.lb-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-num.is-up { color: var(--up); font-weight: var(--fw-semibold); }
+
+.lb-follow {
+  padding: var(--sp-2) var(--sp-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.lb-follow:hover { border-color: var(--accent); color: var(--accent); }
+
+.lb-table .ta-r { text-align: right; }
+
+/* Podium jadi satu kolom di layar sempit; offset kartu #2 dilepas supaya
+   tidak menabrak kartu di atasnya. */
+@media (max-width: 900px) {
+  .lb-podium { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); padding-top: 0; }
+  .lb-card-2 { margin-top: 0; padding-bottom: var(--sp-6); }
+}
+
+.lb-follow.is-following {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Butir 13: judul + toggle rute (template) */
+.lb-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.lb-top .lb-toggle { align-self: auto; }
+
+.lb-title {
+  margin: 0;
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semibold);
+}
+
+.lb-sample-note {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+@media (max-width: 560px) {
+  .lb-toggle button { padding: var(--sp-2) var(--sp-4); font-size: var(--fs-md); }
+}

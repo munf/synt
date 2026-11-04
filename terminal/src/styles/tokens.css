@@ -1,0 +1,297 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   TOKEN DESAIN — titik masuk ekspor Figma.
+
+   ⭐ INI SATU-SATUNYA FILE yang boleh diisi hasil ekspor Figma. Layout dan
+   komponen ditulis tangan (lihat README §Ekspor Figma). Alasannya: token itu
+   data (pemetaan 1:1, aman digenerate), layout itu keputusan — kapan flex,
+   kapan grid, apa yang wrap di mobile — dan Figma tak menyimpan keputusan,
+   hanya hasil akhirnya di satu ukuran layar.
+
+   Sumber: file Figma 2JUgQIt1cKzNklrPEvBs9m, 4 frame desktop 1440px.
+   Regenerate mentahnya: node design/figma-fetch.mjs
+   Ringkas ulang frekuensinya: node design/extract-tokens.mjs
+
+   File Figma tidak memakai Variables/Styles bernama, jadi token di bawah
+   disimpulkan dari frekuensi pemakaian — nilai yang muncul puluhan kali
+   diperlakukan sebagai token, yang muncul sekali dua kali diabaikan sebagai
+   one-off. Angka ×N pada komentar adalah jumlah kemunculannya di file.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════
+     PALET synt.fun — warm dark.
+
+     Nilai diambil langsung dari variabel CSS synt.fun (2026-08-16), bukan
+     dicocokkan dengan mata. BRAND.md §Sumber kebenaran: kalau dashboard dan
+     panduan berbeda, DASHBOARD yang benar — jadi landing page-lah acuannya,
+     dan terminal yang menyesuaikan.
+
+     Yang DIWARISI apa adanya — inilah identitasnya:
+       --ink    #f4f2ec   teks, bukan putih murni
+       --lime   #c8f24a   aksen
+       --clay   #ec5a40   bahaya
+       rona hangat kecokelatan pada seluruh permukaan
+
+     Yang DISESUAIKAN, dan alasannya:
+       · Permukaan diturunkan jauh lebih gelap dari synt.fun (#1a1712 →
+         #060504). Landing page boleh lapang; terminal dipandangi berjam-jam
+         dan penuh angka, jadi latar nyaris hitam membuat data menonjol.
+       · Warna semantik (naik/turun/warn/info) diredam dari nilai aslinya.
+         Di landing page tiap warna muncul sekali; di terminal ia muncul di
+         puluhan baris sekaligus, dan versi penuh membuat layar berisik.
+       · Lime penuh HANYA untuk aksen yang jarang muncul — cincin skor,
+         tombol utama, indikator aktif.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  /* ── Warna: permukaan ──
+     JAUH lebih gelap dari synt.fun. Landing page boleh hangat dan lapang;
+     terminal dipandangi berjam-jam dan penuh angka, jadi latar yang nyaris
+     hitam membuat data menonjol dan mata tidak cepat lelah.
+
+     Kehangatan tetap ada — tiap nilai masih punya rona kecokelatan (R>G>B),
+     bukan abu-abu netral — hanya luminansinya diturunkan hampir ke dasar.
+     Jarak antar lapisan jadi sempit, jadi BORDER yang mengambil alih tugas
+     memisahkan kartu dari kanvas. */
+  --bg: #060504;              /* kanvas halaman — nyaris hitam */
+  --panel: #0c0a07;           /* kartu, dropdown, row */
+  --panel-2: #090705;         /* header tabel, rail, popover */
+  --panel-3: #040303;         /* nested/inset — paling dalam */
+  --raise: #14110b;           /* A2 (DESIGN §1.2): baris terpilih, tile hover, latar inisial avatar, popover ketuk */
+
+  /* Border dinaikkan sedikit relatif terhadap permukaan. Pada latar
+     segelap ini, garis yang ikut turun akan hilang dan kartu kehilangan
+     bentuknya — border-lah satu-satunya yang memisahkan lapisan sekarang. */
+  --line: #1e1a14;
+  --line-soft: #f4f2ec0d;     /* pemisah halus (5% ink) */
+
+  /* ── Warna: teks ──
+     Teks utama #f4f2ec, bukan putih murni. Pada latar hangat, putih murni
+     terasa menusuk; inilah sebagian alasan synt.fun lebih ramah di mata. */
+  --ink: #f4f2ec;             /* teks utama — --ink */
+  --dim: #cfc9b8;             /* teks sekunder — antara ink & dim */
+  --dim-2: #b3ab96;           /* label, meta */
+  --mute: #8a8268;            /* placeholder, hint — --dim (5,15:1 di atas --panel) */
+  /* Teks paling redup. Dulu #5f594a = 2,84:1 di atas --panel (gagal WCAG AA)
+     padahal dipakai utk "—", alamat, catatan sumber 10-11px. Kini 4,75:1
+     (--panel) / 4,88:1 (--bg): lulus AA utk teks kecil, tetap di bawah --mute
+     agar jenjang ink > dim > dim-2 > mute > mute-2 terjaga (A1, 27 Okt). */
+  --mute-2: #847c64;
+  /* Nilai lama --mute-2, khusus DEKORASI non-teks: border hover, titik pemisah
+     "·", garis bertitik, garis indikator chart. JANGAN untuk teks yang dibaca. */
+  --line-strong: #5f594a;
+
+  /* ── Warna: aksen & semantik ──
+     ⭐ Lime dipakai SEDIKIT dan sengaja. Ia menandai penilaian synt —
+     cincin skor, tombol aksi utama, indikator aktif — dan tidak lebih.
+
+     Nilai "naik" TIDAK memakai lime penuh, melainkan --up yang lebih
+     teredam. Alasannya praktis: angka naik muncul di puluhan baris
+     sekaligus, dan kalau semuanya lime terang, layar jadi berisik dan
+     aksen kehilangan artinya. Warna paling terang harus dicadangkan untuk
+     hal yang paling jarang muncul. */
+  --accent: #c8f24a;          /* aksen utama — --lime, dipakai hemat */
+  --accent-strong: #a8d02e;   /* varian pekat */
+  --accent-soft: #c8f24a14;   /* latar badge (8%) */
+
+  --up: #8fae3e;              /* nilai naik — lime teredam, tenang di massa */
+  --up-2: #a8c94f;            /* naik, varian terang */
+  /* Dulu #c4553f = 4,44:1 di atas --panel (persis di bawah AA) utk persen
+     merah 11-12px. Kini 4,85:1 (--panel), 4,57:1 di atas latar --down-soft;
+     rona clay teredam sama, hanya sedikit lebih terang (A1, 27 Okt). */
+  --down: #cc5b44;            /* nilai turun — clay teredam */
+  --down-soft: #cc5b4414;     /* latar badge turun (8%) */
+  --down-strong: #ec5a40;     /* error, kritis — clay penuh */
+  --warn: #c08c3a;            /* peringatan — amber teredam */
+  --info: #4e8d99;            /* rank badge, link — teal teredam */
+  /* Teal terang utk TEKS di atas latar --info transparan (chip rank, tag dev).
+     Menggantikan hex liar #9ed4df (Leaderboard) & #93b4ff (tag dev /coin). */
+  --info-2: #9ed4df;
+
+  /* ── Nada skor dari base rate runtuh (DESIGN §1.2, A2) ──
+     HANYA dipakai bila `ScoreCell` diberi `nada="base"`. Bawaan SOL (warna dari `checks`) & BNB tetap seperti
+     sekarang sampai pemilik memutuskan §6 no. 2-4. Hijau = "lebih jarang runtuh", bukan aman. */
+  --tone-0: #8a8268;          /* tak dinilai: quiet / pending */
+  --tone-1: #8fae3e;          /* runtuh < 15% */
+  --tone-2: #c9a227;          /* 15-25% */
+  --tone-3: #f5a524;          /* 25-35% */
+  --tone-4: #e5484d;          /* >= 35% */
+
+  /* Teks di ATAS permukaan terang (tombol lime, tombol putih). Memakai
+     hitam kecokelatan synt.fun, bukan hitam murni — di atas lime, hitam
+     murni terasa keras sedangkan warna ini menyatu dgn keluarga palet. */
+  --on-bright: #14110b;
+
+  /* ── Tipografi ──
+     Inter untuk UI, Geist Mono untuk angka/alamat. Liberation Mono &
+     Liberation Serif di file adalah fallback render Figma di Linux —
+     bukan pilihan desain, jadi tidak ikut dibawa. */
+  --font-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* ═══ SKALA TIPOGRAFI BERSAMA (butir A1, 27 Okt 2026) ═══════════════════
+     Satu skala utk SOL & BNB, semua halaman. Aturan:
+       · font-size, line-height, letter-spacing HANYA lewat token di bawah;
+         nilai px/em literal di CSS komponen = pelanggaran (grep sebelum commit).
+       · Teks yang wajib dibaca (base rate, catatan, sumber, tag, alasan)
+         minimal --fs-sm (11px). --fs-xs (10px) HANYA utk label mikro
+         huruf besar (label metrik, header kolom, tag SAMPLE) + --ls-caps.
+         9px dihapus dari skala.
+       · Angka = --font-mono + tabular-nums; label = --font-sans.
+       · Huruf besar selalu lewat CSS (text-transform), tidak diketik di JSX.
+         Judul kartu = kelas global .card-title (base.css).
+
+     token       px   peran                                     lh disarankan
+     --fs-xs     10   label mikro HURUF BESAR, header kolom      --lh-tight
+     --fs-sm     11   meta: catatan, sumber, tag, base rate      --lh-base
+     --fs-base   12   teks kartu, alasan, fakta, judul kartu     --lh-base
+     --fs-md     13   angka mono tabel, teks catatan feed        --lh-base
+     --fs-lg     14   teks dominan, tab, nilai metrik            --lh-base
+     --fs-xl     16   badan post, judul faktor, pil skor besar   --lh-base
+     --fs-2xl    18   simbol di panel, angka skor tabel/cincin   --lh-tight
+     --fs-3xl    20   simbol token (h1) di /coin & /bnb, judul   --lh-tight
+     --fs-4xl    24   harga / angka besar                        --lh-none
+     --fs-5xl    28   harga utama panel, total wallet            --lh-none
+     --fs-6xl    32   angka skor raksasa (kartu skor)            --lh-none
+
+     Pemetaan literal lama (35 deklarasi, 15 nilai): 9→10 (label) / 11 (catatan),
+     10→11 (base rate), 12.5→13, 15→16, 17→16 (badan teks) / 18 (judul),
+     19→18, 22→20 (judul) / 24 (harga), 26→28, 30→28, 34→32.
+     ⚠️ Nama --fs-xl (dulu 20px) & --fs-2xl (dulu 24px) BERGESER: pemakai lama
+     sudah dipindah ke --fs-3xl / --fs-4xl. */
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-base: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --fs-xl: 16px;
+  --fs-2xl: 18px;
+  --fs-3xl: 20px;
+  --fs-4xl: 24px;
+  --fs-5xl: 28px;
+  --fs-6xl: 32px;
+  /* R1 (DESIGN §0.4, 28 Okt): nilai px PREVIEW yang tak ada di skala, dipakai komponen yang meniru preview
+     (Trenches). Pembulatan A1 (19→18, 30→28) dibatalkan utk komponen preview: token, bukan literal. */
+  --fs-score-row: 19px;       /* angka skor di baris tabel Trenches (preview .tt-score-num) */
+  --fs-price: 30px;           /* harga utama panel Trenches (preview .tp-price-value) */
+  /* R1 (atas permintaan orkestrator): nilai px preview lain, supaya R2/R3 memetakan literal lokal saat merge.
+     ⚠️ --fs-2xs HANYA utk label mikro dekoratif (tag huruf besar); teks yang wajib dibaca tetap ≥ --fs-sm (11). */
+  --fs-2xs: 9px;              /* tag mikro huruf besar (preview .tp-fact-mock, label 9px) */
+  --fs-body-sm: 12.5px;       /* teks badan rapat (preview 12.5) */
+  --fs-body-md: 15px;         /* teks badan menengah / pil skor besar (preview 15) */
+  --fs-body-lg: 17px;         /* status skor halaman token & badan post (preview 17) */
+  --fs-title-md: 22px;        /* judul / simbol halaman (preview 22) */
+  --fs-title-lg: 26px;        /* harga / angka besar halaman (preview 26) */
+
+  /* Tinggi baris: RASIO tanpa satuan (ikut ukuran font elemen, aman diwarisi).
+     Dulu px (14-32) dan tak dipakai; 35 literal (1.5 ×15, 1.45 ×6, ...)
+     dirapikan ke 5 langkah: 1.15-1.25 → tight, 1.35-1.4 → snug,
+     1.45-1.55 → base, 1.6-1.7 → loose. */
+  --lh-none: 1;               /* angka tunggal besar, ikon, pil */
+  --lh-tight: 1.2;            /* judul, simbol, label satu baris */
+  --lh-snug: 1.35;            /* judul dua baris, kartu padat */
+  --lh-base: 1.5;             /* teks UI & paragraf pendek (bawaan body) */
+  --lh-loose: 1.6;            /* paragraf panjang (post, penjelasan) */
+  /* R3 nit (28 Okt): nilai preview yang dipakai >1 area, dulu disalin sbg token lokal per area (--dc/--side/--ac/
+     --dn/--pv-*) & literal TokenView. Satu token bersama, nilai tetap. */
+  --lh-relaxed: 1.45;         /* bio Discovery, lead panel samping, baris akun, teks kartu token */
+  --lh-prose: 1.55;           /* badan post, lead DevNotice, paragraf kartu token */
+
+  /* Letter-spacing: 3 langkah (dulu 11 nilai, −0.03…0.14em).
+     −0.03/−0.02/−0.01 → tight; 0.03/0.04/0.05 → wide; 0.06/0.08/0.12/0.14 → caps. */
+  --ls-tight: -0.02em;        /* angka/judul besar (≥18px) */
+  --ls-wide: 0.04em;          /* header tabel, chip kecil */
+  --ls-caps: 0.06em;          /* SEMUA teks text-transform: uppercase */
+  /* R3 nit (28 Okt): nilai preview yang dipakai >1 area (dulu token lokal --eb/--wp/--dc/--lb-* & literal TokenView). */
+  --ls-num: -0.01em;          /* angka besar (statistik engine/wallet, bukti post Discovery, harga /coin) */
+  --ls-slight: 0.03em;        /* badge rank Leaderboard, chip kecil halaman token */
+  --ls-label: 0.05em;         /* label metrik footer engine, header tabel wallet, label /coin */
+  --ls-caps-wide: 0.08em;     /* judul seksi panel engine, tag AGENT/SAMPLE Discovery */
+  --ls-mono-caps: 0.14em;     /* R1: label rantai mono huruf besar di kaki panel ("SOLANA", preview .tp-chain-plain) */
+
+  --fw-normal: 400;
+  --fw-medium: 500;           /* ×141 berat dominan */
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ── Spacing — dari padding & gap auto-layout ── */
+  --sp-0: 2px;                /* ×180 */
+  --sp-1: 4px;                /* ×171 */
+  --sp-2: 6px;                /* ×84  */
+  --sp-3: 8px;                /* ×48  */
+  --sp-4: 12px;               /* ×158 */
+  --sp-5: 16px;               /* ×217 — spacing paling umum */
+  --sp-6: 20px;
+  --sp-7: 24px;
+  --sp-8: 32px;
+  --sp-9: 40px;
+
+  /* ── Radius ── */
+  --r-xs: 4px;                /* ×115 — paling umum */
+  --r-sm: 6px;                /* ×39  */
+  --r-md: 8px;                /* ×57  */
+  --r-lg: 10px;               /* ×15  */
+  --r-xl: 12px;               /* ×22  */
+  --r-2xl: 16px;              /* ×6   */
+  --r-full: 9999px;           /* ×54 — pill, avatar */
+
+  /* ── Layout ── */
+  /* Lebar konten: MENGIKUTI LAYAR, tanpa batas atas.
+
+     Frame Figma 1440px adalah ukuran desain, bukan batas produk. Angka
+     tetap apa pun — 1440, 1800 — hanya memindahkan pita kosong ke monitor
+     berikutnya yang lebih besar. Terminal memakai seluruh lebar yang ada;
+     yang menjaga keterbacaan adalah lebar KOLOM, bukan lebar halaman.
+
+     Kolom teks (feed, artikel) tetap dibatasi di komponennya masing-masing
+     lewat max-width — baris teks 200 karakter tidak terbaca betapapun
+     lebarnya layar. Tabel dan daftar angka justru diuntungkan ruang. */
+  --shell-max: none;
+
+  /* Padding tepi halaman. Naik di layar besar supaya konten tidak menempel
+     ke sisi monitor. */
+  --shell-pad: var(--sp-6);
+  --rail-w: 52px;             /* rail ikon kiri (Trenches) */
+  --topbar-h: 60px;
+  --footer-h: 38px;           /* bar status engine */
+
+  /* ── Ukuran komponen bersama (DESIGN §1.3, A2) ── */
+  --av-sm: 24px;              /* avatar: pencarian, watchlist, kartu Discovery */
+  --av-md: 32px;              /* avatar: baris tabel kedua chain */
+  --av-lg: 40px;              /* avatar: panel Trenches, halaman token ponsel */
+  --av-row: 34px;             /* R1: avatar baris tabel Trenches (preview) */
+  --av-xl: 48px;              /* avatar: halaman token */
+  --chip-h: 20px;             /* tinggi semua chip status */
+  /* R1 (DESIGN §0.1): ukuran Trenches = preview. */
+  --tr-panel-w: 384px;        /* panel kiri Trenches (preview .tp) */
+  --tt-row-h: 72px;           /* tinggi minimum baris tabel Trenches (+ jarak 12 = ritme ±84px seperti preview) */
+  --tt-min-w: 1180px;         /* lebar minimum grid tabel; kartu tabel menggulir sendiri di bawahnya */
+
+  /* ── Elevasi berjenjang ──
+     Tiga tingkat, bukan satu. Tanpa jenjang, semua kartu duduk di bidang
+     yang sama dan mata tak punya petunjuk mana yang penting — itulah yang
+     membuat sebuah antarmuka terasa datar dan generik. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.24);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.36);
+
+  /* Garis terang tipis di tepi atas kartu — satu-satunya "cahaya" yang
+     tersisa, dan ia struktural: menandai tepi permukaan, bukan menyorot. */
+  --edge-top: inset 0 1px 0 rgb(244 242 236 / 0.05);
+
+
+  /* ── Permukaan ──
+     Warna rata, tanpa gradient. Kedalaman datang dari border + elevasi
+     saja; itu cukup, dan hasilnya lebih bersih.
+
+     Tetap sebagai token (bukan langsung --panel) supaya kalau nanti
+     permukaan perlu diubah, satu tempat yang disunting — bukan 40 selektor. */
+  --surface: var(--panel);
+  --surface-2: var(--panel-2);
+
+  /* ── Kurva animasi ──
+     Satu kurva untuk seluruh produk. Ease bawaan browser terasa lamban;
+     kurva ini berangkat cepat lalu mengendap. */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+}

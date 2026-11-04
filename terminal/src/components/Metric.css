@@ -1,0 +1,72 @@
+/* Metric (A2) — tipografi dasar semua varian: label = .t-micro (10px, 500, caps), nilai = mono tabular; varian
+   inline/stat menyetel ukuran preview R3 di bawah.
+   Kotak/ukuran per konteks diatur varian; kelas induk (mis. .cd-metric) boleh menambah kotak & lebar minimum. */
+.mt { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+
+.mt-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.mt-note { white-space: nowrap; }
+
+.mt-row { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; }
+
+.mt-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-base);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.mt-value.is-up { color: var(--up); }
+.mt-value.is-down { color: var(--down); }
+.mt-value.is-accent { color: var(--accent); }
+/* "—" = tak terukur: paling redup yang masih lulus AA (--mute-2 4,75:1) */
+.mt-value.is-empty { color: var(--mute-2); }
+
+.mt-caption {
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--mute);
+}
+
+/* tile: kotak bergaris (panel Trenches SOL & BNB, Market /bnb). Label 2 baris tak menggeser angka. */
+.mt-tile {
+  justify-content: space-between;
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel-3);
+}
+
+/* inline: footer engine SOL & BNB (label + nilai sebaris) — ukuran preview R3: label 10px 400 ls .05em, nilai 12px,
+   lh 1.5. Dulu ditimpa `.eb .mt-inline` di EngineBar.css; kini nilainya di sini (nit R3). */
+.mt-inline { display: inline-flex; flex-direction: row; align-items: baseline; gap: var(--sp-2); white-space: nowrap; }
+.mt-inline .mt-label { font-weight: var(--fw-normal); letter-spacing: var(--ls-label); line-height: var(--lh-base); }
+.mt-inline .mt-value { font-size: var(--fs-base); line-height: var(--lh-base); }
+
+/* stat: panel detail engine & wallet tracker (nilai besar) — ukuran preview R3: label 11px 400 lh 1.5, angka 24px
+   700 lh 1.5 ls -.01em. Dulu ditimpa `.eb .mt-stat` & `.wt-metrics .mt-stat`; kini nilainya di sini (nit R3). */
+.mt-stat {
+  gap: 0;
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+}
+.mt-stat .mt-row { margin-top: var(--sp-2); }
+.mt-stat .mt-label { font-size: var(--fs-sm); font-weight: var(--fw-normal); line-height: var(--lh-base); }
+.mt-stat .mt-value { font-size: var(--fs-4xl); font-weight: var(--fw-bold); line-height: var(--lh-base); letter-spacing: var(--ls-num); }
+.mt-stat .mt-caption { margin-top: var(--sp-1); }
+
+/* count: "12 Followers" — nilai dulu, label kalimat biasa */
+.mt-count { flex-direction: row-reverse; justify-content: flex-end; align-items: baseline; gap: var(--sp-2); }
+.mt-count .mt-label { font-size: var(--fs-base); line-height: var(--lh-base); letter-spacing: normal; text-transform: none; }
+.mt-count .mt-value { font-family: var(--font-sans); font-weight: var(--fw-bold); }

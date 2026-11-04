@@ -1,0 +1,186 @@
+/* Leaderboard creator (butir 13, B3). Desktop: tabel grid; ≤760px: kartu bertumpuk (tanpa gulir samping). */
+.cr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+.cr-head { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.cr-lead {
+  margin: 0;
+  font-size: var(--fs-lg);
+  color: var(--ink);
+}
+
+.cr-meta {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
+
+.cr-stale { color: var(--warn); }
+
+.cr-state {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-5);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-xl);
+  text-align: center;
+  color: var(--mute);
+}
+
+.cr-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-5) var(--sp-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  font-size: var(--fs-base);
+  color: var(--dim);
+}
+
+.cr-notes p { margin: 0; }
+.cr-notes strong { color: var(--ink); font-weight: var(--fw-semibold); }
+
+.cr-legend {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3) var(--sp-6);
+  margin: var(--sp-2) 0 0;
+}
+
+.cr-legend dt {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+.cr-legend dd { margin: 2px 0 0; color: var(--mute); }
+
+.cr-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: currentColor;
+}
+
+/* Warna outcome: diredam, bukan tuduhan. Collapsed = --down, Winner = --up, sisanya netral. */
+.is-rug { color: var(--down); }
+.is-dead { color: var(--mute-2); }
+.is-survive { color: var(--dim); }
+.is-winner { color: var(--up); }
+
+.cr-table {
+  --cr-cols: 40px minmax(120px, 1.3fr) minmax(80px, 0.8fr) minmax(130px, 1.1fr) repeat(4, minmax(78px, 0.7fr)) minmax(90px, 0.8fr);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm), var(--edge-top);
+  overflow-x: auto;
+}
+
+.cr-row {
+  display: grid;
+  grid-template-columns: var(--cr-cols);
+  gap: var(--sp-2) var(--sp-4);
+  align-items: center;
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--fs-md);
+  min-width: 960px;
+}
+
+[role='rowgroup'] > .cr-row:last-child { border-bottom: none; }
+
+.cr-row-head {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+
+.cr-table .ta-r { text-align: right; }
+
+.cr-rank { color: var(--mute); font-variant-numeric: tabular-nums; }
+
+.cr-wallet a {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--line-strong);
+}
+
+.cr-wallet a:hover { color: var(--accent); border-color: var(--accent); }
+/* Butir 8: tautan Solscan kecil di sebelah alamat (alamat sendiri → wallet tracker) */
+.cr-wallet a.cr-ext { margin-left: var(--sp-2); border-bottom: 0; color: var(--mute); font-family: var(--font-sans); }
+
+.cr-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cr-of { color: var(--mute); font-size: var(--fs-base); }
+.cr-share.is-dead, .cr-share.is-survive { color: var(--ink); }
+.cr-last { color: var(--dim); }
+
+/* Bilah komposisi outcome (atas launch berlabel), satu baris penuh di bawah angka. */
+.cr-bar {
+  grid-column: 2 / -1;
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  border-radius: var(--r-full);
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.cr-bar i { display: block; background: currentColor; min-width: 2px; }
+
+@media (max-width: 1100px) {
+  .cr-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Ponsel: setiap baris jadi kartu; label kolom ditulis lewat data-label. */
+@media (max-width: 760px) {
+  .cr-notes { padding: var(--sp-4); }
+  .cr-legend { grid-template-columns: minmax(0, 1fr); }
+  .cr-table { overflow: visible; background: transparent; border: none; box-shadow: none; }
+  .cr-row-head { display: none; }
+  .cr-row {
+    min-width: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-3) var(--sp-3);
+    margin-bottom: var(--sp-3);
+    padding: var(--sp-4);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface-2);
+  }
+  [role='rowgroup'] > .cr-row:last-child { border-bottom: 1px solid var(--line); }
+  .cr-rank { grid-column: 1; grid-row: 1; }
+  .cr-wallet { grid-column: 2 / span 2; grid-row: 1; }
+  .cr-last { grid-column: 4; grid-row: 1; }
+  .cr-num { text-align: left; white-space: normal; }
+  .cr-num[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--mute);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-wide);
+  }
+  .cr-last { text-align: right; }
+  .cr-num[data-label='Launches'] { grid-column: 1 / span 2; }
+  .cr-num[data-label='Outcome known'] { grid-column: 3 / span 2; }
+  .cr-bar { grid-column: 1 / -1; }
+}
+
+/* 0 = tak ada → netral, bukan merah/hijau */
+.cr-share.is-zero { color: var(--mute); }

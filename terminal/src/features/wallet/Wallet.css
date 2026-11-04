@@ -1,0 +1,538 @@
+/* R3 (DESIGN §0.4, 28 Okt): ukuran tampak = preview, lewat token bersama (--fs-title-lg, --fs-title-md, --ls-label). */
+
+/* Wallet tracker & portfolio — drawer ringkas + halaman penuh. */
+
+/* ── Drawer ── */
+.wl-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.wl-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--dur) var(--ease);
+}
+
+/* nit R3: hover baris hanya utk penunjuk sungguhan; di layar sentuh sorotan tak menempel sesudah ketuk */
+@media (hover: hover) { .wl-item:hover { border-color: var(--line-strong); } }
+
+.wl-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.wl-label {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-addr { font-family: var(--font-mono); font-size: var(--fs-base); color: var(--mute); }
+
+.wl-nums { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+
+.wl-val {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-meta { font-size: var(--fs-base); color: var(--mute); }
+
+/* Skor: pil kecil, tiga tingkat. */
+.wl-score,
+.wl-avg {
+  min-width: 30px;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-xs);
+  border: 1px solid transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.wl-score.is-high, .wl-avg.is-high {
+  color: var(--up);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--up) 30%, transparent);
+}
+
+.wl-score.is-mid, .wl-avg.is-mid {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 26%, transparent);
+}
+
+.wl-score.is-low, .wl-avg.is-low {
+  color: var(--down);
+  background: var(--down-soft);
+  border-color: color-mix(in srgb, var(--down) 30%, transparent);
+}
+
+/* Skor saat masuk diredam — yang penting nilai sekarang. A2 (nit Reviewer A1): dulu `opacity: .55` → kontras
+   2,7-3:1 (gagal AA). Kini diredam lewat BENTUK (latar & garis dilepas, garis putus), warna teks tetap penuh. */
+.wl-score.is-muted { background: transparent; border-style: dashed; }
+
+.wl-noscore { color: var(--mute-2); min-width: 30px; text-align: center; }
+
+.wl-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.wl-total-val {
+  font-family: var(--font-mono);
+  font-size: var(--fs-title-lg);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-total-label { font-size: var(--fs-base); color: var(--mute); }
+
+.wl-trades { display: flex; flex-direction: column; gap: var(--sp-2); }
+
+.wl-trade {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-base);
+}
+
+.wl-side {
+  min-width: 32px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+}
+
+.wl-side.is-buy { color: var(--up); }
+.wl-side.is-sell { color: var(--down); }
+
+.wl-trade-sym { flex: 1; font-weight: var(--fw-semibold); }
+
+.wl-trade-amt {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.wl-trade-time { color: var(--mute-2); white-space: nowrap; }
+
+.wl-open {
+  display: block;
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  text-align: center;
+  color: var(--accent);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+
+.wl-open:hover { border-color: var(--accent); }
+
+/* ── Halaman penuh ── */
+.wp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-5);
+}
+
+.wp-title { margin: 0; font-size: var(--fs-title-md); font-weight: var(--fw-bold); }
+
+.wp-sub {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-lg);
+  color: var(--mute);
+  max-width: 60ch;
+}
+
+.wp-add {
+  padding: var(--sp-3) var(--sp-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wp-add:hover { border-color: var(--accent); color: var(--accent); }
+
+.wp-total {
+  font-family: var(--font-mono);
+  font-size: var(--fs-title-lg);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.wp-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm), var(--edge-top);
+  padding: var(--sp-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.wp-card::-webkit-scrollbar { height: 0; }
+
+.wp-section {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.wp-table { display: flex; flex-direction: column; min-width: 720px; }
+
+.wp-tr {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.6fr) repeat(4, minmax(90px, 1fr));
+  gap: var(--sp-4);
+  align-items: center;
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: var(--fs-lg);
+}
+
+.wp-tr-trade {
+  grid-template-columns: minmax(120px, 1.2fr) 60px minmax(90px, 1fr) 80px minmax(90px, 1fr) 80px;
+}
+
+.wp-tr-pos {
+  grid-template-columns: minmax(110px, 1fr) minmax(90px, 1fr) minmax(90px, 1fr) 90px minmax(190px, 1.2fr);
+}
+
+/* nit R3: hover baris hanya utk penunjuk sungguhan; di layar sentuh sorotan tak menempel sesudah ketuk */
+@media (hover: hover) { .wp-tr:not(.wp-th):hover { background: var(--panel-3); } }
+
+.wp-th {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--mute);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.wp-wallet { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+
+.wp-wallet-label {
+  font-weight: var(--fw-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wp-wallet-addr { font-family: var(--font-mono); font-size: var(--fs-base); color: var(--mute); }
+
+.wp-num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.wp-dim { color: var(--mute-2); font-size: var(--fs-base); }
+
+.wp-link { color: var(--ink); font-weight: var(--fw-semibold); text-decoration: none; }
+.wp-link:hover { color: var(--accent); }
+
+.wp-side {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+}
+
+.wp-side.is-buy { color: var(--up); }
+.wp-side.is-sell { color: var(--down); }
+
+/* Pergeseran skor sejak masuk — peringatan yang hanya bisa diberikan
+   terminal dengan audit berkelanjutan. */
+.wp-drift {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+
+.wp-arrow { color: var(--mute-2); }
+
+.wp-drift-n {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  min-width: 24px;
+  text-align: right;
+}
+
+.wp-note {
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute-2);
+}
+
+.wp-table .ta-r { text-align: right; }
+
+@media (max-width: 640px) {
+  .wp-head { flex-direction: column; }
+}
+
+/* ── Wallet tracker read-only (butir 8, B2) ──────────────────────────────────
+   R3 (28 Okt): digambar ulang dgn bahasa visual preview, karena halaman ini tak punya padanan di preview:
+   kepala = `.wp-title`/`.wp-sub` (halaman Wallet tracker preview), kartu = `.wp-card`, judul kartu = `.wp-section`,
+   kepala tabel = `.wp-th`, angka = `.wp-num`, waktu = `.wp-dim`, kotak angka ringkasan = kotak statistik footer engine
+   preview (label 11px caps, angka 24px). Desktop: grid kolom tetap; ≤760px: baris jadi kartu dua tingkat tanpa gulir
+   samping. */
+.wt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-width: 0;
+}
+.wt-head { display: flex; flex-direction: column; gap: var(--sp-4); }
+.wt-head .wp-sub { margin-top: calc(var(--sp-2) - var(--sp-4)); }
+
+.wt-form { display: flex; flex-direction: column; gap: var(--sp-2); max-width: 640px; }
+.wt-form-row { display: flex; gap: var(--sp-3); min-width: 0; }
+.wt-input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+.wt-input::placeholder { color: var(--mute); font-family: var(--font-sans); font-size: var(--fs-lg); }
+.wt-input:focus-visible { outline: none; border-color: var(--accent); }
+.wt-input[aria-invalid='true'] { border-color: var(--down); }
+/* tombol = `.wp-add` preview */
+.wt-go, .wt-retry {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.wt-go:hover, .wt-retry:hover { border-color: var(--accent); color: var(--accent); }
+.wt-form-err { margin: 0; font-size: var(--fs-base); color: var(--down); }
+.wt-form.is-compact .wt-input, .wt-form.is-compact .wt-go { height: 36px; }
+.wt-form.is-compact .wt-go { padding: 0 var(--sp-4); }
+
+/* kartu = `.wp-card`; isi diberi tepi dalam --sp-4 spt baris tabel preview */
+.wt-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm), var(--edge-top);
+  min-width: 0;
+}
+.wt-card > :not(.wt-table) { margin-left: var(--sp-4); margin-right: var(--sp-4); }
+.wt-card > :first-child { margin-top: var(--sp-3); }
+.wt-card > :last-child:not(.wt-table) { margin-bottom: var(--sp-3); }
+.wt-skel { height: 132px; background: var(--panel-3); }
+
+/* judul kartu = `.wp-section` preview (12px, 700, caps, --dim) */
+.wt-h {
+  margin: 0;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.wt-state {
+  margin: 0;
+  padding: var(--sp-8) var(--sp-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-base);
+  color: var(--mute);
+  text-align: center;
+}
+.wt-state p { margin: 0 0 var(--sp-4); }
+.wt-state strong { color: var(--ink); font-family: var(--font-mono); font-weight: var(--fw-medium); }
+
+/* Ringkasan */
+.wt-id { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); min-width: 0; }
+.wt-id-main { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.wt-addr {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.wt-addr:hover { color: var(--accent); }
+.wt-ext { flex-shrink: 0; font-size: var(--fs-base); color: var(--dim); text-decoration: none; }
+.wt-ext:hover { color: var(--accent); }
+.wt-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); }
+/* kotak angka = `.eb-stat` preview: label 11px 400 caps, angka 24px bold lh 1.5, catatan 12px --mute */
+.wt-metrics .mt-stat { background: var(--panel-3); }
+.wt-sum-foot, .wt-sec-note, .wt-more { margin: 0; font-size: var(--fs-base); line-height: var(--lh-base); color: var(--mute-2); }
+
+/* Cakupan: teks kartu preview (12px, --dim, lh 1.5) */
+.wt-scope-list {
+  margin: 0;
+  padding-left: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--dim);
+}
+.wt-scope-list b, .wt-scope-not b { color: var(--ink); font-weight: var(--fw-semibold); }
+.wt-scope-not { margin: 0; font-size: var(--fs-base); line-height: var(--lh-base); color: var(--dim); }
+
+/* Tabel = `.wp-table` preview */
+.wt-sec-head { display: flex; align-items: baseline; gap: var(--sp-3); }
+.wt-sec-n { font-family: var(--font-mono); font-size: var(--fs-base); color: var(--mute); font-variant-numeric: tabular-nums; }
+.wt-empty { margin: 0; padding: var(--sp-4) 0; font-size: var(--fs-lg); color: var(--mute); }
+
+.wt-table { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.wt-tr {
+  display: grid;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  font-size: var(--fs-lg);
+  min-width: 0;
+}
+/* nit R3: hover baris hanya utk penunjuk sungguhan; di layar sentuh sorotan tak menempel sesudah ketuk */
+@media (hover: hover) { .wt-tr:not(.wt-th):hover { background: var(--panel-3); } }
+.wt-tr-launch { grid-template-columns: minmax(0, 1.6fr) 96px 176px 120px; }
+.wt-tr-held { grid-template-columns: minmax(0, 1.6fr) 56px 64px 72px 176px 120px 88px; }
+/* kepala kolom = `.wp-th` preview (11px, 600, ls .05em, caps, --mute) */
+.wt-th {
+  padding-top: var(--sp-2);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.wt-tr .ta-r { text-align: right; justify-self: end; }
+.wt-c-token { min-width: 0; overflow: hidden; }
+.wt-c { min-width: 0; }
+.wt-num { font-family: var(--font-mono); font-size: var(--fs-md); font-variant-numeric: tabular-nums; color: var(--ink); }
+/* waktu = `.wp-dim` preview */
+.wt-num.wt-time { font-family: var(--font-sans); font-size: var(--fs-base); color: var(--mute-2); }
+
+@media (max-width: 900px) {
+  .wt-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  /* putaran 2 (nit 7): kepala kolom disembunyikan SECARA VISUAL saja → pembaca layar tetap mendapat nama kolom */
+  .wt-th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    padding: 0;
+    border: 0;
+  }
+  .wt-tr-launch, .wt-tr-held {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+  }
+  .wt-tr + .wt-tr:not(.wt-th) { border-top: 1px solid var(--line); border-radius: 0; }
+  .wt-c-token { grid-row: 1; grid-column: 1 / 3; }
+  .wt-c-score { grid-row: 1; grid-column: 3; justify-self: end; }
+  .wt-tr .wt-c, .wt-tr .wt-c.ta-r { justify-self: start; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+  /* label sel = label mobile Creators preview (10px, caps, ls wide, --mute) */
+  .wt-tr .wt-c::before {
+    content: attr(data-label);
+    font-family: var(--font-sans);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-normal);
+    letter-spacing: var(--ls-wide);
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+  .wt-head { gap: var(--sp-3); }
+}
+
+@media (max-width: 420px) {
+  .wt-form-row { flex-direction: column; }
+  .wt-input { flex: none; width: 100%; box-sizing: border-box; }
+  .wt-go { width: 100%; }
+  .wt-metrics .mt-stat { padding: var(--sp-3) var(--sp-4); }
+}
+/* kepala kolom dgn popover ketuk: ikut gaya kepala tabel */
+.wt-th .ip-trigger { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; }
+.wt-result { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+.wt-result:focus { outline: none; }
+
+/* A6: kepala "Pair age": popover di layar lebar; ≤760 (kepala tersembunyi visual) teks polos tanpa tombol berfokus,
+   penjelasannya pindah ke catatan bagian (.wt-narrow-only) */
+.wt-th-plain, .wt-narrow-only { display: none; }
+@media (max-width: 760px) {
+  .wt-th .wt-th-pop, .wt-th .wt-th-pop + .ip-desc { display: none; }
+  .wt-th-plain, .wt-narrow-only { display: inline; }
+}

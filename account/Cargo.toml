@@ -1,0 +1,37 @@
+[package]
+name = "synt-akun"
+version = "0.1.0"
+edition = "2021"
+
+# Akun terminal synt: login wallet Solana (SIWS) atau EVM (SIWE) + profil.
+# Proses & DB TERPISAH dari engine dan synt-dash — lihat src/main.rs.
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1.40", features = ["macros", "rt-multi-thread", "signal", "time"] }
+# ⚠️ TANPA fitur TLS: DB lokal (127.0.0.1) dan layanan ini tak bicara HTTPS ke luar.
+# Menambah fitur TLS = periksa jebakan #43 synt-v10 (dua provider kripto mematikan TLS).
+sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "macros", "migrate"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1.0"
+dotenvy = "0.15"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# verifikasi tanda tangan wallet — HANYA verifikasi, layanan ini tak pernah memegang kunci privat
+ed25519-dalek = "2"
+bs58 = "0.5"
+# login wallet EVM (SIWE, 1 Nov): pulihkan alamat dari tanda tangan secp256k1 + keccak — juga HANYA verifikasi
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+sha3 = "0.10"
+sha2 = "0.10"
+getrandom = "0.2"
+# pemantau watchlist membaca API publik synt-dash di 127.0.0.1 lewat HTTP biasa.
+# Trading (2 Nov) butuh HTTPS ke RPC & Jupiter: `rustls-tls` di reqwest 0.12 = provider `ring` SAJA
+# (jebakan #43 synt-v10: `cargo tree -i aws-lc-rs` harus kosong).
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+base64 = "0.22"
+
+[profile.release]
+strip = true

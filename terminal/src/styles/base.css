@@ -1,0 +1,141 @@
+/* Font di-bundle, bukan diambil dari CDN: produk berbayar sebaiknya tidak
+   membocorkan kunjungan penggunanya ke host pihak ketiga, dan halaman tetap
+   tampil benar tanpa jaringan eksternal. Varian variable = satu file untuk
+   semua berat yang dipakai desain (400/500/600/700). */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/geist-mono';
+
+@import './tokens.css';
+
+/* Reset seperlunya — bukan reset total. Yang dinormalkan hanya yang benar-benar
+   berbeda antar-browser dan mengganggu layout. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Latar dan permukaan sengaja POLOS — warna rata, tanpa tekstur maupun
+   gradient di mana pun.
+
+   Kedalaman seluruhnya datang dari border dan elevasi bayangan. Itu cukup
+   untuk memisahkan lapisan, dan hasilnya jauh lebih bersih daripada
+   menumpuk tekstur, gradient, dan bayangan sekaligus. */
+
+/* Angka finansial WAJIB tabular: tanpa ini kolom harga bergoyang tiap refresh
+   karena lebar tiap digit berbeda. */
+.num, table td, time {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* Pembungkus konten route. Ada supaya tiap layar tidak mengulang margin
+   sendiri-sendiri — jarak antar layar jadi konsisten dari satu tempat. */
+.page {
+  display: block;
+  padding-top: var(--sp-5);
+}
+
+/* ── Scrollbar tersembunyi ────────────────────────────────────────────────
+   Untuk container di dalam kartu, di mana scrollbar sistem memotong sudut
+   membulat dan menambah garis abu yang bukan bagian dari desain.
+
+   Yang disembunyikan hanya TAMPILANNYA — gulirannya tetap utuh lewat roda
+   mouse, trackpad, keyboard, dan sentuhan. Jangan pakai ini pada <body> atau
+   area teks panjang: di sana batang scrollbar adalah satu-satunya petunjuk
+   posisi baca, dan menghilangkannya membuat pengguna tersesat. */
+.no-scrollbar {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* Edge lawas */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Fokus keyboard harus terlihat. Jangan hapus outline tanpa penggantinya. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Kelas peran tipografi (DESIGN-TERMINAL §1.1, A2) ──
+   Ukuran + line-height + berat + keluarga + letter-spacing selalu berpasangan; komponen memakai PERAN, bukan
+   memilih --fs-* sendiri. Dirakit dari token A1 (tokens.css). Angka & alamat: mono + tabular-nums. */
+.t-micro, .t-meta, .t-body, .t-body-lg, .t-title, .t-h1 { font-family: var(--font-sans); }
+.t-num-sm, .t-num, .t-num-md, .t-score, .t-num-lg, .t-num-2xl, .t-num-xl {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.t-micro {
+  font-size: var(--fs-xs);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+.t-meta { font-size: var(--fs-sm); line-height: var(--lh-base); font-weight: var(--fw-normal); }
+.t-body { font-size: var(--fs-base); line-height: var(--lh-base); font-weight: var(--fw-normal); }
+.t-body-lg { font-size: var(--fs-lg); line-height: var(--lh-base); font-weight: var(--fw-medium); }
+.t-title { font-size: var(--fs-2xl); line-height: var(--lh-tight); font-weight: var(--fw-semibold); }
+.t-h1 { font-size: var(--fs-3xl); line-height: var(--lh-tight); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); }
+.t-num-sm { font-size: var(--fs-sm); line-height: var(--lh-base); font-weight: var(--fw-medium); }
+.t-num { font-size: var(--fs-md); line-height: var(--lh-base); font-weight: var(--fw-medium); }
+.t-num-md { font-size: var(--fs-lg); line-height: var(--lh-base); font-weight: var(--fw-semibold); }
+.t-score { font-size: var(--fs-2xl); line-height: var(--lh-tight); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); }
+.t-num-lg { font-size: var(--fs-3xl); line-height: var(--lh-tight); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); }
+.t-num-2xl { font-size: var(--fs-4xl); line-height: var(--lh-none); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); }
+.t-num-xl { font-size: var(--fs-5xl); line-height: var(--lh-none); font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); }
+
+/* ── Judul kartu bersama (A1, 27 Okt; diselaraskan A2 dgn DESIGN §1.1) ──
+   SATU gaya judul kartu utk /coin, /bnb, panel Trenches SOL & BNB, Discovery.
+   Resep = `.t-micro` dgn berat 600 ("judul kartu 600"): 10px, huruf besar via CSS, ls caps. A1 sempat 12px/700;
+   §1 menetapkan 10px/600. Keterbacaan dijaga warna --dim (≈11:1 di --panel, jauh di atas AA 4,5:1).
+   Teks di JSX ditulis biasa ("Score at 2 minutes"): pembaca layar tak mengeja, gaya diubah dari satu tempat.
+   Margin/tata letak tetap milik komponen (kelas kedua bila perlu). */
+.card-title {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* Sub-judul di dalam kartu ("Why this score" SOL, "Why" BNB): label mikro `.t-micro` (500), satu jenjang di bawah
+   judul kartu: --mute (5,15:1 di --panel, lulus AA). */
+.card-subtitle {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* Teks khusus pembaca layar (dipakai komponen bersama: Popover, ScoreCell). */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

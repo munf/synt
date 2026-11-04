@@ -1,0 +1,53 @@
+/* A5 — potongan chart bersama SOL & BNB. Sejak R2 kedua chain memakai KLineChart Pro dgn tema bawaannya (preview);
+   di sini hanya strip OHLC mono di antara bilah Pro & kanvas, kerangka muat, catatan data lama. */
+
+.ck { display: flex; flex-direction: column; min-width: 0; }
+
+/* strip OHLC: satu baris di desktop, dua baris tetap di ponsel (tinggi tak melompat saat crosshair bergerak) */
+.ck-ohlc {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--sp-4);
+  height: var(--ck-strip-h, auto);
+  box-sizing: border-box;
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+  overflow: hidden;
+}
+.ck-ohlc-t { color: var(--mute); }
+.ck-ohlc-last { color: var(--mute-2); }
+.ck-ohlc-i { display: inline-flex; gap: var(--sp-1); white-space: nowrap; }
+.ck-ohlc-k { color: var(--mute-2); }
+.ck-ohlc-v.is-up { color: var(--up); }
+.ck-ohlc-v.is-down { color: var(--down); }
+
+.ck-plot { position: relative; min-width: 0; }
+
+/* catatan data lama: kecil, tepat di bawah strip OHLC (kedua chain) */
+.ck-stale { margin: 0 0 var(--sp-2); font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--warn); }
+
+/* skeleton: blok --raise setinggi chart, tanpa shimmer */
+.ck-skel { display: flex; flex-direction: column; gap: var(--sp-3); height: calc(var(--tv-chart-h, 400px) + 72px); }
+.ck-skel-bar { height: 24px; width: 180px; max-width: 60%; border-radius: var(--r-xs); background: var(--raise); }
+.ck-skel-plot {
+  flex: 1; display: flex; align-items: flex-end; gap: 6%;
+  padding: var(--sp-4); border-radius: var(--r-md); background: color-mix(in srgb, var(--raise) 50%, transparent);
+}
+.ck-skel-plot i { flex: 1; border-radius: 2px; background: var(--raise); }
+.ck-fail { color: var(--mute); }
+
+/* ── Bilah KLineChart Pro (SOL) ── R2 (DESIGN §0): tampilan PREVIEW = tema bawaan Pro apa adanya (simbol, periode,
+   tombol alat berlabel, latar & warna Pro), keputusan pemilik. Yang tetap dari lab A5: strip OHLC HTML di bawah bilah,
+   font mono & warna token di KANVAS (`gayakanKanvas`), bilah yang bisa digeser di layar sempit. */
+/* strip OHLC disisipkan di antara bilah Pro & kanvas (PriceChartPro) */
+.tv-chart .klinecharts-pro > .ck-ohlc-host { flex: none; padding: 0 var(--sp-4); border-bottom: 1px solid var(--klinecharts-pro-border-color); }
+
+@media (max-width: 760px) {
+  .ck-ohlc { gap: 2px var(--sp-3); }
+  /* strip ponsel = dua baris tetap (--ck-strip-h 48): tanpa padding samping agar "SOL in curve" tak turun ke baris 3 */
+  .tv-chart .klinecharts-pro > .ck-ohlc-host { padding: 0 var(--sp-1); }
+}
+/* Pro memberi isi tinggi tetap `100% - 38px` (bilah bawaannya); kini bilah + strip OHLC → isi mengisi sisa */
+.tv-chart .klinecharts-pro-content { flex: 1 1 0; height: auto; min-height: 0; }

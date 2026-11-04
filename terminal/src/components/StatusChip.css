@@ -1,0 +1,39 @@
+/* StatusChip (A2): satu gaya chip utk kedua chain (dulu .tt-flag & .bnb-out kembar). */
+.chip {
+  display: inline-block;
+  box-sizing: border-box;
+  min-height: var(--chip-h);
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-xs);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: calc(var(--chip-h) - 4px);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.chip-prefix { color: var(--mute); font-weight: var(--fw-medium); }
+
+.chip-fill.is-ok { background: var(--accent-soft); color: var(--up); }
+.chip-fill.is-bad { background: var(--down-soft); color: var(--down); }
+.chip-fill.is-warn { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
+.chip-fill.is-neutral { background: var(--panel-3); color: var(--dim); }
+.chip-fill.is-muted { background: var(--panel-3); color: var(--mute); }
+.chip-fill.is-open,
+.chip-outline.is-open { color: var(--mute-2); background: transparent; border: 1px dashed var(--line); line-height: calc(var(--chip-h) - 6px); }
+
+/* outline: tag bergaris (Graduated, Creator-filled, Clone) — sama dgn tag launchpad BNB */
+.chip-outline {
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--line);
+  line-height: calc(var(--chip-h) - 2px);
+  color: var(--dim);
+}
+.chip-outline.is-ok { color: var(--up); }
+.chip-outline.is-bad { color: var(--down); }
+.chip-outline.is-warn { color: var(--warn); }
+.chip-outline.is-muted { color: var(--mute); }
+
+/* chip sbg pemicu popover: tanpa garis bawah titik (chip sudah tampak bisa diketuk) */
+.ip-trigger.chip-trigger { text-decoration: none; display: inline-flex; }
+.ip-trigger.chip-trigger:focus-visible .chip { outline: 2px solid var(--accent); outline-offset: 1px; }

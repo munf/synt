@@ -1,0 +1,49 @@
+/* Wadah KLineChart Pro.
+
+   ⚠️ Isi chart digambar Pro sendiri (Solid.js) — CSS di sini hanya mengurus
+   KOTAKNYA. Tema bawaan Pro dibiarkan bekerja apa adanya sesuai keputusan
+   pemilik proyek; penyesuaian visual menyusul setelah chart terbukti jalan. */
+
+.pcp {
+  width: 100%;
+  height: clamp(360px, 52vh, 620px);
+}
+
+.pcp-note {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--mute-2);
+}
+
+.pcp-empty {
+  display: grid;
+  place-content: center;
+  gap: var(--sp-2);
+  height: clamp(280px, 40vh, 440px);
+  padding: var(--sp-6);
+  text-align: center;
+  color: var(--mute);
+  font-size: var(--fs-lg);
+}
+
+.pcp-empty-sub {
+  margin: 0;
+  max-width: 42ch;
+  font-size: var(--fs-base);
+  color: var(--mute-2);
+}
+
+/* ⚠️ Toolbar Pro tak menyusut di layar sempit (`.item.tools` lebar tetap). Dulu seluruh chart diberi min-width 620px
+   dan digeser; A5: hanya BILAH-nya yang bisa digeser (kanvas selebar kartu, sama dgn chart BNB), label teks tombol
+   alat disembunyikan ≤900px (ikon tetap). Pro tak memaparkan opsi untuk ini; hanya CSS. */
+@media (max-width: 900px) {
+  .pcp .klinecharts-pro-period-bar {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .pcp .klinecharts-pro-period-bar > * { flex: none; }
+  .pcp .klinecharts-pro-period-bar .item.tools > span {
+    display: none;
+  }
+}
