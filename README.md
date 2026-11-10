@@ -18,6 +18,7 @@ A score is not advice. It tells you how often pairs at that score collapsed in t
 |---|---|---|
 | [`terminal/`](terminal/) | The web terminal: Trenches, token pages, charts, Discovery, the leaderboard, the wallet tracker, accounts and trading UI | React 18, TypeScript, Vite |
 | [`account/`](account/) | The account and trading service: wallet sign-in, profiles, watchlist sync, alerts, and non-custodial trade building and tracking | Rust, axum, sqlx, Postgres |
+| [`recorder/`](recorder/) | A recorder for the BNB Chain launchpads four.meme and Flap: launches, bonding curve trades, graduations and pool prices, written to Postgres. It runs on its own and needs nothing else from this repository | Rust, tokio, sqlx, Postgres |
 
 The scoring engine, the market data API and the price stream are **not** in this repository. They stay private. The terminal only talks to them over a public HTTP API, so you can run the terminal locally against the live demo (see [Quick start](#quick-start)).
 
@@ -128,3 +129,7 @@ caddy reverse-proxy --from localhost:8443 --to localhost:5173
 synt is in early access. Solana scoring and trading are live on mainnet at https://preview.synt.fun. Limit orders and MEV protection are not built yet.
 
 Code comments are partly in Indonesian, the team's working language. User-facing text and API error messages are in English.
+
+## License
+
+`recorder/` is released under the MIT License, see [`recorder/LICENSE`](recorder/LICENSE). No license has been chosen yet for `terminal/` and `account/`.

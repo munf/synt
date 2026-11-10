@@ -1,0 +1,35 @@
+# systemd unit for bsc-launchpad-recorder.
+#
+#   sudo useradd --system --home /opt/bsc-launchpad-recorder recorder
+#   sudo install -D -m 0755 target/release/bsc-launchpad-recorder /opt/bsc-launchpad-recorder/bsc-launchpad-recorder
+#   sudo install -D -m 0600 -o recorder .env /opt/bsc-launchpad-recorder/.env
+#   sudo install -m 0644 deploy/recorder.service /etc/systemd/system/bsc-launchpad-recorder.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now bsc-launchpad-recorder
+#   journalctl -u bsc-launchpad-recorder -f
+
+[Unit]
+Description=bsc-launchpad-recorder (four.meme + Flap on BNB Chain)
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=recorder
+WorkingDirectory=/opt/bsc-launchpad-recorder
+EnvironmentFile=/opt/bsc-launchpad-recorder/.env
+ExecStart=/opt/bsc-launchpad-recorder/bsc-launchpad-recorder
+# The process exits on purpose when any of its tasks stops; a restart resumes
+# from the stored cursor and backfills the gap.
+Restart=always
+RestartSec=10s
+MemoryMax=512M
+CPUQuota=50%
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
