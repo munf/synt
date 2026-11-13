@@ -121,6 +121,10 @@ pub const LIST_SQL: &str = "SELECT g.token, lower(g.pair), extract(epoch FROM t.
     AND NOT coalesce(a.quote_reserve > 0 AND z.quote_reserve < $3 * a.quote_reserve, false)
   ORDER BY g.block_time DESC LIMIT $4";
 
+/// One row of [`LIST_SQL`]: token, pair, created (unix seconds), quote,
+/// time of the newest `pool_prices` row.
+type ListRow = (String, String, f64, Option<String>, Option<f64>);
+
 /// One sweep piece: (from block, to block, address index [start, end), split depth).
 type Piece = (u64, u64, usize, usize, u32);
 
@@ -252,7 +256,7 @@ impl Sweeper {
     /// Pair list from the database: graduated within 7 days, created outside
     /// the poll window, liquidity not gone, 1,000 most recent.
     async fn refresh(&mut self, pool: &PgPool, rpc: &Rpc, decimals: &decimals::Shared) -> Result<()> {
-        let rows: Vec<(String, String, f64, Option<String>, Option<f64>)> = sqlx::query_as(LIST_SQL)
+        let rows: Vec<ListRow> = sqlx::query_as(LIST_SQL)
             .bind(WATCH_WINDOW_SECS)
             .bind(START_AFTER_CREATED)
             .bind(LIQUIDITY_GONE)
