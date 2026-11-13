@@ -252,7 +252,9 @@ Python 3, standard library only.
 - **No history before the first start**, unless you set the cursor (above). A
   trade of a token created before recording started is stored without a
   `tokens` row; for Flap its `offers` and `funds` are NULL because the curve
-  parameters were never seen.
+  parameters were never seen. Such a token's graduation is stored with its
+  pair, but it gets no `pool_prices` rows: both price writers need the
+  creation time and quote asset from `tokens`.
 - **Prices are in the quote asset, not in USD.** No price feed is included.
 - **Pool prices cover PancakeSwap V2 pairs only.** A Flap pool that is not a
   V2 pair is recorded in `graduations.pool` but has no rows in `pool_prices`.
@@ -275,7 +277,7 @@ Python 3, standard library only.
 ## Development
 
 ```sh
-cargo test                 # 26 unit tests, no network or database needed
+cargo test                 # 27 unit tests, no network or database needed
 python3 tools/topics.py    # topic and selector constants match their signatures
 ```
 

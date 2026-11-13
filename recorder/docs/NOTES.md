@@ -120,20 +120,25 @@ tokens. Read it per token.
 **Do not compare `funds` or `price` across quote assets.** 18 means 18 BNB for
 one token and 18 USDT for another.
 
-**Graduation is two transactions.** `TradeStop` closes the curve.
-`LiquidityAdded` moves the funds, but the PancakeSwap pair is funded in a
-SEPARATE transaction about 10 seconds later. The graduation receipt therefore
-often has no `Sync` log, and reading the pair address from it alone leaves most
-four.meme graduations without a pair. The recorder asks the V2 factory
-`getPair(token, quote)` (BNB mapped to WBNB) 15, 60 and 300 seconds after the
-event, then once an hour for graduations of the last 14 days.
+**Graduation is two transactions.** `TradeStop` is emitted in the trade that
+fills the curve; that receipt has no `Sync` log. `LiquidityAdded` follows in a
+SEPARATE transaction about 20 blocks (10 seconds) later. In both graduations
+checked on 13 Nov 2026 that second transaction also created the PancakeSwap
+pair (`PairCreated`) and funded it (`Sync`), so the pair address was in its
+receipt. The recorder takes the pair from the `LiquidityAdded` receipt and,
+when that has no `Sync`, asks the V2 factory `getPair(token, quote)` (BNB
+mapped to WBNB) 15, 60 and 300 seconds after the event, then once an hour for
+graduations of the last 14 days.
 
 **A pair can exist before it is funded.** Anyone can create the pair early.
 Such a pair reads 0/0 reserves; it is stored only once both reserves are above
 zero.
 
 **The pool opens at the curve price.** The first pool price equals the last
-curve price (ratio 1.0000 when measured).
+curve price (ratio 1.0000 when measured, again for 2 of 2 graduations on
+13 Nov 2026, one quoted in BNB and one in another token). Both pairs were seeded
+with 200 million tokens and 98% of the curve's funds (15.58 of 15.9 BNB, 59.39
+of 60.6 in the other quote).
 
 ## Flap
 
@@ -175,10 +180,13 @@ routers, not people. The wallet is `tx.from`, which the recorder stores as
 **`pool` in `LaunchedToDEX` is the pair.** In nearly every case it is a
 PancakeSwap V2 pair, in the same transaction. A minority of pools are not V2:
 they have code but revert `token0()` and `getReserves()`. The recorder stops
-asking after 5 consecutive reverts.
+asking after 5 consecutive reverts. Take the pair from the event, not from the
+receipt: the graduation transaction can swap through other pairs first, and in
+one receipt checked the first `Sync` came from a different pair.
 
 **The pool opens above the curve price.** The first pool price was 1.1094 times
-the last curve price when measured. A chart that joins curve and pool prices
+the last curve price when measured, and again for 4 of 4 graduations on
+13 Nov 2026 (quoted in BNB and in two other tokens). A chart that joins curve and pool prices
 shows a step there; it is in the data, not a recording error.
 
 ## DEX pairs
