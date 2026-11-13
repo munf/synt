@@ -24,6 +24,7 @@ import { hariKalibrasi } from '@/features/bnb/bnbFormat'
  *    memakai data contoh — dan angka contoh yang tak ditandai akan membuat
  *    seluruh angka NYATA di halaman lain ikut diragukan.
  *
+ * ⛔ USANG (8 Nov, pemilik): tak lagi tiap kunjungan — setelah "Got it" disembunyikan 24 jam (`SEMBUNYI_MS`).
  * ⭐ SELALU ditampilkan tiap kali terminal dibuka (keputusan pemilik proyek).
  * Sebelumnya sekali per browser lewat localStorage, dengan alasan
  * pemberitahuan berulang akan ditutup tanpa dibaca. Alasan itu kalah oleh
@@ -52,14 +53,37 @@ function chainBnb(pathname: string, search = ''): boolean {
   }
 }
 
+/** 8 Nov (pemilik): di preview "Got it" menyembunyikan pil sehari, bukan hanya sampai muat ulang. */
+const KUNCI_TUTUP = 'synt.notice.tutup'
+const SEMBUNYI_MS = 24 * 60 * 60 * 1000
+
+function baruDitutup(): boolean {
+  try {
+    const t = Number(localStorage.getItem(KUNCI_TUTUP))
+    return t > 0 && Date.now() - t < SEMBUNYI_MS
+  } catch {
+    return false
+  }
+}
+
 export function DevNotice() {
   const { pathname, search } = useLocation()
   const bnb = chainBnb(pathname, search)
-  // mode template: cukup sekali per browser (localStorage); preview tetap seperti semula
+  // mode template: cukup sekali per browser (localStorage); preview: sekali sehari setelah "Got it"
   const KUNCI = 'synt.template.notice'
-  const [buka, setBuka] = useState(() => { if (!TEMPLATE) return true; try { return localStorage.getItem(KUNCI) !== '1' } catch { return true } })
+  const [buka, setBuka] = useState(() => { if (!TEMPLATE) return !baruDitutup(); try { return localStorage.getItem(KUNCI) !== '1' } catch { return true } })
+  // 7 Nov (pemilik): di preview pemberitahuan jadi kartu kecil di pojok, tak lagi modal yang menutupi terminal;
+  // tampil tiap kunjungan (8 Nov: setelah "Got it" disembunyikan 24 jam). Butir rincian dilipat di balik "Details".
+  // ⭐ U23 (audit 7 Nov, disetujui pemilik 8 Nov): kartu itu menutup baris terakhir tabel (MC, Buy) di 1440 dan ±25%
+  // layar 390. Kini bawaannya PIL satu baris "synt is in early access · Details · Got it" tepat di atas footer engine,
+  // di ruang yang dicadangkan untuknya (`--dn-h`, DevNotice.css) → tak menutup sel atau tombol Buy. "Details" membuka
+  // kartu lengkap (pembuka + rincian, isi sama); "Hide details" kembali ke pil. "Got it" = sembunyi 24 jam.
+  const [rinci, setRinci] = useState(false)
 
-  const tutup = () => { if (TEMPLATE) { try { localStorage.setItem(KUNCI, '1') } catch { /* penyimpanan diblokir */ } } setBuka(false) }
+  const tutup = () => {
+    try { localStorage.setItem(TEMPLATE ? KUNCI : KUNCI_TUTUP, TEMPLATE ? '1' : String(Date.now())) } catch { /* penyimpanan diblokir */ }
+    setBuka(false)
+  }
 
   if (!buka) return null
 
@@ -78,19 +102,36 @@ export function DevNotice() {
     </div>
   )
 
+  // U23: pil satu baris (bawaan). Pembuka BNB (dgn permintaan kalibrasinya) baru dipasang saat kartu dibuka.
+  if (!rinci) return (
+    <aside className="dn-dock dn-dock--pil" aria-labelledby="dn-title">
+      <div className="dn-pil">
+        <h2 id="dn-title" className="dn-pil-t">synt is in early access</h2>
+        <span className="dn-pil-sep" aria-hidden="true">·</span>
+        <button type="button" className="dn-pil-rinci" aria-expanded={false} onClick={() => setRinci(true)}>
+          Details
+        </button>
+        <button type="button" className="dn-pil-ok" onClick={tutup}>
+          Got it
+        </button>
+      </div>
+    </aside>
+  )
+
   return (
-    <div className="dn-backdrop" role="dialog" aria-modal="true" aria-labelledby="dn-title">
-      <div className="dn-card">
+    <aside className="dn-dock" aria-labelledby="dn-title">
+      <div className="dn-card dn-card--dock">
         <h2 id="dn-title" className="dn-title">synt is in early access</h2>
 
         {bnb ? <PembukaBnb pathname={pathname} /> : (
         <p className="dn-lead">
-          The audit engine is live and every score on this page is real. Two
-          things are not finished yet, and you should know which is which.
+          The audit engine is live and every score on this page is real. synt
+          is still in development. The notes below say how fresh each figure is
+          and what a score can and cannot tell you.
         </p>
         )}
 
-        <ul className="dn-list">
+        <ul className="dn-list" id="dn-rinci">
           {bnb ? (
           <li>
             <b>BNB prices are not streamed live.</b> Price, market cap and liquidity come from the latest trade
@@ -132,11 +173,16 @@ export function DevNotice() {
           )}
         </ul>
 
-        <button type="button" className="dn-ok" onClick={tutup}>
-          Got it
-        </button>
+        <div className="dn-aksi">
+          <button type="button" className="dn-rinci" aria-expanded={true} aria-controls="dn-rinci" onClick={() => setRinci(false)}>
+            Hide details
+          </button>
+          <button type="button" className="dn-ok" onClick={tutup}>
+            Got it
+          </button>
+        </div>
       </div>
-    </div>
+    </aside>
   )
 }
 

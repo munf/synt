@@ -47,3 +47,26 @@
     display: none;
   }
 }
+
+/* ⭐ U25(a) (audit 7 Nov): ≤640 bilah tetap terpotong walau bisa digeser (isi 538 px dlm 316 px di 390: "1h" & ikon
+   alat tersembunyi tanpa petunjuk; scrollbar disembunyikan). Kini DUA baris tanpa geser: [menu | 1m 5m 15m 1h] lalu
+   lima ikon alat selebar bilah (target ketuk sama lebar). Nama simbol disembunyikan: sama dgn kepala halaman tepat di
+   atas chart. Pemisah baris = ::after selebar 100% (order 1) di antara periode (order 0) & alat (order 2). Isi chart
+   (`.klinecharts-pro-content` flex 1, chart.css) menyusut sendiri; ResizeObserver PriceChartPro/BnbChart mengukur ulang. */
+@media (max-width: 640px) {
+  .pcp .klinecharts-pro-period-bar { flex-wrap: wrap; height: auto; overflow-x: visible; }
+  .pcp .klinecharts-pro-period-bar::after { content: ''; flex-basis: 100%; order: 1; }
+  .pcp .klinecharts-pro-period-bar .symbol { display: none; }
+  .pcp .klinecharts-pro-period-bar .menu-container { height: 38px; }
+  .pcp .klinecharts-pro-period-bar .item.tools {
+    order: 2;
+    flex: 1 1 0;
+    height: 36px;
+    padding: 0;
+    margin-left: 0;
+    border-left: 0;
+    border-top: 1px solid var(--klinecharts-pro-border-color);
+  }
+  .pcp .klinecharts-pro-period-bar .item.tools:last-child { border-right: 0; }
+  .pcp .klinecharts-pro-period-bar .item.tools svg { margin-right: 0; }
+}

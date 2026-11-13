@@ -16,7 +16,7 @@ import { useStickyState } from '@/lib/useStickyState'
 import { TEMPLATE } from '@/lib/template'
 import { ChainSwitch, type Chain } from '@/features/trenches/ChainSwitch'
 import { PairTable, kunciKepala, type TableMode } from '@/features/trenches/PairTable'
-import { PairPanel } from '@/features/trenches/PairPanel'
+import { PairPanel, PairPanelSkeleton } from '@/features/trenches/PairPanel'
 import { PairSheet } from '@/features/trenches/PairSheet'
 import { adaptBnb, adaptSol, type BnbItemK, type PairModel, type SolDetail } from '@/features/trenches/pairModel'
 import { useBnbCalibration, useBnbTrenches, type BnbView } from '@/features/bnb/useBnb'
@@ -101,6 +101,8 @@ export function TrenchesRoute() {
   const mode: TableMode = phone ? 'phone' : narrow ? 'mid' : 'wide'
 
   /* ── chain & tampilan dari URL ── */
+  // ⚠️ U21: skrip <head> index.html menebak chain & view dgn aturan YANG SAMA (URL → nilai tersimpan → bawaan) utk preload
+  // feed; ubah aturan di sini → selaraskan di sana, kalau tidak feed diunduh dua kali.
   const [params, setParams] = useSearchParams()
   const pChain = params.get('chain')
   const chain: Chain = pChain === 'bnb' || pChain === 'sol' ? pChain : chainSimpan === 'bnb' ? 'bnb' : 'sol'
@@ -202,18 +204,39 @@ export function TrenchesRoute() {
   useEffect(() => {
     if (poll.data) setCache((c) => ({ ...c, [poll.data!.view]: poll.data!.res }))
   }, [poll.data])
+  /* ⭐ U5 (audit 7 Nov): loop 30 dtk hanya memuat tampilan LAIN (tampilan aktif sudah dipoll 5 dtk oleh `poll` di
+     atas; dulu ikut dimuat lagi → 24 permintaan `/api/trenches`/menit) dan BERHENTI saat tab tersembunyi (dulu jalan
+     terus, 8/menit selamanya). Tab tampil lagi → tampilan lain langsung dimuat ulang (tampilan aktif oleh `usePolling`),
+     lalu loop 30 dtk menyala lagi. Tampilan aktif dibaca dari ref supaya ganti tampilan tak memicu muat ulang. */
+  const viewAktif = useRef(solView)
+  viewAktif.current = solView
   useEffect(() => {
     if (chain !== 'sol') return
     const ctl = new AbortController()
+    let t: ReturnType<typeof setInterval> | undefined
     const muat = () =>
-      VIEWS.forEach((v) =>
+      VIEWS.forEach((v) => {
+        if (v.id === viewAktif.current) return
         api.trenches(v.id, 50, ctl.signal)
           .then((res) => setCache((c) => ({ ...c, [v.id]: res })))
-          .catch(() => {}),
-      )
-    muat()
-    const t = setInterval(muat, 30_000)
-    return () => { ctl.abort(); clearInterval(t) }
+          .catch(() => {})
+      })
+    const nyala = () => {
+      clearInterval(t)
+      muat()
+      t = setInterval(muat, 30_000)
+    }
+    const onVisible = () => {
+      if (document.hidden) clearInterval(t)
+      else nyala()
+    }
+    if (!document.hidden) nyala()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      ctl.abort()
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [chain])
 
   const solData = poll.data?.view === solView ? poll.data.res : (cache[solView] ?? null)
@@ -233,6 +256,8 @@ export function TrenchesRoute() {
     () => solRows.filter(({ row }) => cocok(row.symbol, row.mint, row.handle ?? '')),
     [solRows, cocok],
   )
+  // U15: model tabel dibuat sekali per data/saringan (dulu tiap render rute → semua baris dianggap baru)
+  const solModel = useMemo(() => solTampil.map(({ it, row }) => adaptSol(it, null, row)), [solTampil])
 
   const bnb = chain === 'bnb'
   const pilihBaris = (id: string) => {
@@ -278,14 +303,14 @@ export function TrenchesRoute() {
           <Body
             {...common}
             chainBar={chainSw}
-            rows={solTampil.map(({ it, row }) => adaptSol(it, null, row))}
+            rows={solModel}
             total={solRows.length}
             state={solData ? 'ok' : poll.error ? 'error' : 'loading'}
             emptyText={query.trim() ? <>No tokens matching <strong>{query}</strong> in this view.</> : <>No tokens in this view yet.</>}
             foot={solData ? solFoot(view, solRows.length) : null}
-            renderPanel={(m) => {
+            renderPanel={(m, ringkas) => {
               const it = solTampil.find((x) => x.it.mint === m.id)
-              return it ? <SolPanel it={it.it} row={it.row} /> : <PairPanel m={m} />
+              return it ? <SolPanel it={it.it} row={it.row} ringkas={ringkas} /> : <PairPanel m={m} ringkasTabel={ringkas} />
             }}
           />
         )}
@@ -341,9 +366,13 @@ function daftarFilter(ids: FilterId[]): string {
   return l.length <= 1 ? (l[0] ?? '') : `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}`
 }
 
-/** Kepadatan di bawah tabel SOL: jendela & syarat tiap tampilan (synt-dash api.rs `trenches_where`/`_jendela`). */
+/** Kepadatan di bawah tabel SOL: jendela & syarat tiap tampilan (synt-dash api.rs `trenches_where`/`_jendela`).
+ *  ⭐ U13 (audit 7 Nov): hitungan = pair BERSKOR. Feed SOL hanya memuat pair yang lewat gate-2 (`v10_rpc.skor2` ada,
+ *  CTE `kandidat` di api.rs; vonis runtuh ∧ skor sehat ≤ 3 dibuang), jadi "N pairs detected" di samping footer
+ *  "DETECTED 604/h" (semua deteksi) terbaca seolah hanya N pair terdeteksi. Kata "scored" = slot SCORED di footer;
+ *  "detected in the last …" tetap = jendela waktu (`detected_at`). Kata sama di keempat tampilan. */
 function solFoot(view: TrenchView, n: number): string {
-  const p = `${n} ${n === 1 ? 'pair' : 'pairs'}`
+  const p = `${n} scored ${n === 1 ? 'pair' : 'pairs'}`
   switch (view) {
     case 'trending':
       return `${p} trading above 1.5× their first price, detected in the last 12 hours, most recently traded first`
@@ -392,7 +421,8 @@ function Body({
   emptyText: React.ReactNode
   foot: string | null
   source?: string
-  renderPanel: (m: PairModel) => React.ReactNode
+  /** `ringkas` = tabel dlm mode sempit (U26b putaran 2). */
+  renderPanel: (m: PairModel, ringkas: boolean) => React.ReactNode
   banner?: React.ReactNode
   provisional?: string | null
   missingText?: React.ReactNode
@@ -405,6 +435,11 @@ function Body({
   const [dariTabel, setDariTabel] = useState<{ k: string; keys: SortKey[] } | null>(null)
   const onTerlihat = useCallback((keys: SortKey[]) => setDariTabel({ k: kunciTabel, keys }), [kunciTabel])
   const terlihat = dariTabel?.k === kunciTabel ? dariTabel.keys : kunciKepala(chain, view, panelOpen)
+  /* ⭐ U26b putaran 2: tabel sempit (ponsel / kartu < 700 px) tak punya chevron detail → panel & sheet menampilkan isinya
+     (lintasan skor + sparkline, disclaimer audit). Hanya mode sempit; panel di layar lebar tak berubah. */
+  const [sempitTabel, setSempitTabel] = useState<{ k: string; v: boolean } | null>(null)
+  const onSempit = useCallback((v: boolean) => setSempitTabel({ k: kunciTabel, v }), [kunciTabel])
+  const ringkas = sempitTabel?.k === kunciTabel && sempitTabel.v
   const sortTersembunyi =
     mode === 'phone' || sortKeys.some((k) => !terlihat.includes(k)) || (!!sort && !terlihat.includes(sort.key))
   // R1: panel sebaris (lebar) / di atas tabel (≤1100, preview); ponsel = bottom sheet saat baris diketuk
@@ -433,7 +468,8 @@ function Body({
 
   const isi =
     state === 'loading' ? (
-      <PairTable rows={[]} chain={chain} view={view} compact={panelOpen} selectedId={null} onSelect={onSelect} loading provisional={provisional} />
+      // U21: `onTerlihat` juga saat memuat → cadangan toolbar tahu apakah Sort ringkas akan tampil (tinggi bar sama)
+      <PairTable rows={[]} chain={chain} view={view} compact={panelOpen} selectedId={null} onSelect={onSelect} loading provisional={provisional} onTerlihat={onTerlihat} onSempit={onSempit} />
     ) : state === 'error' ? (
       <p className="tr-empty">Cannot reach the engine. Retrying automatically.</p>
     ) : state === 'missing' ? (
@@ -462,6 +498,7 @@ function Body({
         sortKeys={sortKeys}
         onSort={onSort}
         onTerlihat={onTerlihat}
+        onSempit={onSempit}
       />
     )
 
@@ -469,13 +506,22 @@ function Body({
     <div className="tr-body">
       {inline && panelOpen && (
         <aside className="tr-panel" id="token-panel" aria-label="Token details">
-          {active ? renderPanel(active) : (
-            <p className="tr-empty">{state === 'loading' ? 'Loading…' : 'Select a token'}</p>
+          {active ? renderPanel(active, ringkas) : state === 'loading' ? <PairPanelSkeleton /> : (
+            <p className="tr-empty">Select a token</p>
           )}
         </aside>
       )}
 
       <div className="tr-main">
+        {/* U21 (kerangka statis index.html / styles/kerangka.css meniru tinggi ini & PairPanelSkeleton):
+            ≤1100 bar ini baru muncul bersama data (toolbar) → selama memuat dicadangkan setinggi toolbar, supaya
+            tabel skeleton yang sudah terlihat tak turun saat data tiba (dulu +40 px di ponsel) */}
+        {!wide && state === 'loading' && (
+          // tanpa chip filter & tanpa Sort ringkas (SOL, panel tertutup) toolbar hanya teks jumlah → bar lebih pendek
+          <div className={`tr-bar tr-bar-skel is-${chain}${filterChain(chain).length === 0 && !sortTersembunyi ? ' is-ringkas' : ''}`} aria-hidden="true">
+            <i className="sk" />
+          </div>
+        )}
         {(wide || (state === 'ok' && total > 0)) && <div className="tr-bar">
           {wide && <div className="tr-chainbar">{chainBar}</div>}
           {state === 'ok' && total > 0 && (
@@ -506,7 +552,7 @@ function Body({
 
       {!inline && (
         <PairSheet open={sheetOpen && !!active} label={active ? `${active.symbol} details` : 'Token details'} onClose={onCloseSheet}>
-          {active && renderPanel(active)}
+          {active && renderPanel(active, ringkas)}
         </PairSheet>
       )}
     </div>
@@ -517,7 +563,7 @@ function Body({
  * Panel SOL: model baris (angka sama dgn tabel) + `/api/token` utk waktu skor & jendela ukur ("scored at 7m",
  * "first 10 min"). ⛔ Respons wajib milik mint yang diminta (respons lama bisa tiba setelah berpindah baris).
  */
-function SolPanel({ it, row }: { it: TrenchItem; row: ReturnType<typeof adaptTrench> }) {
+function SolPanel({ it, row, ringkas }: { it: TrenchItem; row: ReturnType<typeof adaptTrench>; ringkas: boolean }) {
   const { data } = usePolling(
     (signal) => api.token(it.mint, signal),
     15_000,
@@ -535,7 +581,7 @@ function SolPanel({ it, row }: { it: TrenchItem; row: ReturnType<typeof adaptTre
       setTampil(adaptToken(data))
     }
   }, [data, it.mint])
-  return <PairPanel m={adaptSol(it, detail, row)} detail={tampil && tampil.mint === it.mint ? tampil : null} />
+  return <PairPanel m={adaptSol(it, detail, row)} detail={tampil && tampil.mint === it.mint ? tampil : null} ringkasTabel={ringkas} />
 }
 
 /* ── BNB ── */
@@ -588,7 +634,7 @@ function BnbBody(props: BodyCommon & { view: BnbView; cocok: (s: string, a: stri
           )}
         </>
       }
-      renderPanel={(m) => <PairPanel m={m} onCalibration={onCalibration} badges={TEMPLATE && contoh ? <SampleTag /> : undefined} />}
+      renderPanel={(m, ringkas) => <PairPanel m={m} onCalibration={onCalibration} badges={TEMPLATE && contoh ? <SampleTag /> : undefined} ringkasTabel={ringkas} />}
     />
   )
 }

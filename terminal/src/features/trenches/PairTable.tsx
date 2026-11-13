@@ -1,5 +1,5 @@
 import { QuickBuy } from '@/features/trade/QuickBuy'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { siklus, type Sort, type SortKey } from './pairSort'
 import { Avatar } from '@/components/Avatar'
@@ -8,7 +8,7 @@ import { StatusChip } from '@/components/StatusChip'
 import { InfoPopover } from '@/components/Popover'
 import { alamatPendek, pct, trendClass, uang } from '@/lib/format'
 import { useCopy } from '@/lib/useCopy'
-import { hitung, rate, type PairModel, type Num, type Tag } from './pairModel'
+import { rate, type PairModel, type Num, type Tag } from './pairModel'
 import './PairTable.css'
 
 /**
@@ -19,8 +19,11 @@ import './PairTable.css'
  * (1180, preview) → di bawahnya kartu tabel yang menggulir, bukan halaman.
  *
  * Yang dipertahankan dari lab (§0.2): model chain-agnostik (`PairModel`), sortir lewat kepala kolom (panah gaya
- * kepala preview), "—" yang bisa diketuk (popover), tag & kolom khusus BNB (BUYERS, AT 90M, WHY, chip Provisional).
- * Chain hanya mengubah ISI slot; bentuk, ukuran & gaya sel sama.
+ * kepala preview), "—" yang bisa diketuk (popover), chip Provisional BNB.
+ * ⭐ T1 (pemilik 7 Nov, "samakan saja dengan apa yang solana tampilkan"): BNB memakai SET kolom SOL per tampilan
+ * (New = SOL New, Graduated = SOL Graduated) dgn urutan sama. Slot TREND BNB = chip outcome AT 90M (BNB dinilai
+ * sekali, tanpa lintasan skor). Putaran 2: kolom yang selalu kosong utk BNB dilepas (Graduated tanpa MOVE/RETENTION,
+ * New: CURVE di slot LIQ); "—" situasional (skor, outcome, alasan) tetap bersebab. Chain hanya mengubah ISI slot.
  */
 export type TableMode = 'wide' | 'mid' | 'phone'
 export type PairView = 'new' | 'trending' | 'bonding' | 'graduated'
@@ -29,6 +32,9 @@ interface Ctx {
   chain: 'sol' | 'bnb'
   view: PairView
   compact: boolean
+  /** U14: sparkline skor boleh tampil = kolom SCORE selebar penuh (176 px). Panel tertutup selalu; panel terbuka
+   *  selama tabel tak masuk mode sempit (lihat `kolom`). */
+  spark: boolean
 }
 
 interface Col {
@@ -57,10 +63,32 @@ function Uang({ n, label }: { n: Num; label: string }) {
   return <span>{uang(n.v)}</span>
 }
 
-/** Sel skor preview: angka telanjang berwarna + (sparkline) + base rate. Panel terbuka → tanpa sparkline, base rate 2 baris. */
-function Score({ m, compact }: { m: PairModel; compact: boolean }) {
+/**
+ * Sel skor preview: angka telanjang berwarna + (sparkline) + base rate. Tanpa sparkline (kolom sempit) → base rate 2 baris.
+ * ⭐ U14 (audit 7 Nov): dulu panel terbuka (bawaan) = selalu tanpa sparkline, padahal kolom SCORE tetap 176 px (sama dgn
+ * panel tertutup) → di 1440 sparkline (fitur "tak boleh dihilangkan", CLAUDE.md) hilang di kolom yang renggang. Kini
+ * sparkline hanya dilepas bila lebar kartu memang tak cukup: mode sempit `kolom()` (BUANG habis & grid tetap tak muat,
+ * kolom SCORE menyusut ke 96 px). Baris tanpa deret skor (BNB) tetap tata letak ringkas spt dulu.
+ */
+function Score({ m, compact, spark }: { m: PairModel; compact: boolean; spark: boolean }) {
   const s = m.score
-  if (s.kind !== 'value') return <ScoreBadge empty={{ title: s.title, sub: s.sub }} info={s.info} />
+  if (s.kind !== 'value') {
+    if (m.chain !== 'bnb') return <ScoreBadge empty={{ title: s.title, sub: s.sub }} info={s.info} />
+    /* T1: BNB tanpa skor (Quiet / Scoring at 2m) = anatomi sel skor SOL: slot angka "—" redup, keadaan di baris
+       base rate. Pemicu popover tetap ikon "?" kecil (ketuk sel di ponsel = pilih baris). */
+    return (
+      <span className="pt-score is-empty">
+        <span className="pt-score-num pt-dim">—</span>
+        <span className="pt-score-side">
+          <span className="pt-score-base pt-score-state">
+            {s.title}
+            {s.info && <InfoPopover info={s.info} label={s.title} className="ip-q">?</InfoPopover>}
+          </span>
+          {s.sub && <span className="pt-score-base">{s.sub}</span>}
+        </span>
+      </span>
+    )
+  }
   const tone = `sk-tone-${s.tone}`
   const num = (
     <span className={`pt-score-num ${tone}`}>
@@ -69,8 +97,10 @@ function Score({ m, compact }: { m: PairModel; compact: boolean }) {
     </span>
   )
   // ⛔ Base rate WAJIB menempel pada skor (PRODUK.md §0), juga saat sempit.
-  const base = s.rate === null ? <>No base<br />rate yet</> : compact ? <>{rate(s.rate)}<br />collapsed</> : <>{rate(s.rate)} collapsed</>
-  if (compact) {
+  const h = s.spark
+  const ringkas = compact && !(spark && h && h.length > 1)
+  const base = s.rate === null ? <>No base<br />rate yet</> : ringkas ? <>{rate(s.rate)}<br />collapsed</> : <>{rate(s.rate)} collapsed</>
+  if (ringkas) {
     return (
       <span className="pt-score">
         {num}
@@ -78,7 +108,6 @@ function Score({ m, compact }: { m: PairModel; compact: boolean }) {
       </span>
     )
   }
-  const h = s.spark
   return (
     <span className="pt-score">
       {num}
@@ -90,13 +119,13 @@ function Score({ m, compact }: { m: PairModel; compact: boolean }) {
   )
 }
 
-/** TOP RISK (SOL) / WHY (BNB): chip mono tanpa kotak dipisah titik, yang menurunkan skor berwarna, sisanya redup. */
+/** TOP RISK: chip mono tanpa kotak dipisah titik, yang menurunkan skor berwarna, sisanya redup (BNB: sinyal gagal). */
 function Risk({ m }: { m: PairModel }) {
   if (!m.reasons.length) {
     return m.reasonsEmpty ? (
       <span className="pt-risk-none">{m.reasonsEmpty}</span>
     ) : (
-      <Kosong why={m.reasonsWhy ?? undefined} label={m.chain === 'bnb' ? 'Why' : 'Top risk'} />
+      <Kosong why={m.reasonsWhy ?? undefined} label="Top risk" />
     )
   }
   return (
@@ -121,18 +150,33 @@ function Curve({ m }: { m: PairModel }) {
   )
 }
 
-function TagLine({ tags, max = 2 }: { tags: Tag[]; max?: number }) {
+/** U26d: "Name reused ×36" → nama + hitungan. Di kolom TOKEN sempit yang dipotong elipsis hanya NAMA-nya
+    ("Name re… ×36"); dulu elipsis memakan hitungannya ("Name reus…"). */
+const HITUNGAN = /^(.*\S)\s+(×\d+)$/
+
+function TagIsi({ t, sempit }: { t: Tag; sempit: boolean }) {
+  const h = sempit ? HITUNGAN.exec(t.label) : null
+  if (!h) return <span className={`pt-tag is-${t.tone}`}>{t.label}</span>
+  return (
+    <span className={`pt-tag is-${t.tone} has-hitung`}>
+      <span className="pt-tag-nama">{h[1]}</span>
+      <span className="pt-tag-hitung">{'\u00a0'}{h[2]}</span>
+    </span>
+  )
+}
+
+function TagLine({ tags, max = 2, sempit = false }: { tags: Tag[]; max?: number; sempit?: boolean }) {
   if (!tags.length || max <= 0) return null
   return (
     <span className="pt-tags">
       {tags.slice(0, max).map((t) =>
         t.info ? (
           <InfoPopover key={t.label} className="chip-trigger" label={t.label} info={t.info}>
-            <span className={`pt-tag is-${t.tone}`}>{t.label}</span>
+            <TagIsi t={t} sempit={sempit} />
           </InfoPopover>
         ) : (
           // pembungkus = bentuk sama dgn pemicu popover → pemisah "·" selalu di dlm `.pt-tag`
-          <span key={t.label} className="pt-tag-w"><span className={`pt-tag is-${t.tone}`}>{t.label}</span></span>
+          <span key={t.label} className="pt-tag-w"><TagIsi t={t} sempit={sempit} /></span>
         ),
       )}
     </span>
@@ -140,11 +184,18 @@ function TagLine({ tags, max = 2 }: { tags: Tag[]; max?: number }) {
 }
 
 /**
- * BNB: alamat + tag dlm SATU baris. Tag yang tak muat disembunyikan utuh (peringatan dulu, urutan model) dan
+ * BNB: tag baris (`rowTags`: peringatan & quote non-BNB) di bawah alamat, tempat label P2 SOL (T1: alamat kini
+ * sendirian di baris-2 spt SOL), dlm SATU baris. Tag yang tak muat disembunyikan utuh (peringatan dulu, urutan model) dan
  * dihitung jadi "+N" (nit R1: dulu hilang tanpa tanda); semua tag tetap di panel. Diukur sesudah tata letak:
  * selama ada yang turun baris (termasuk "+N" sendiri), satu tag lagi dilepas; lebar berubah → hitung ulang.
+ *
+ * ⭐ U6 putaran 2 (Reviewer): kolom TOKEN ponsel (`sempit`, 96-136px) lebih sempit dari "Name reused ×36" → dulu tag
+ * peringatan dilepas & baris hanya menyisakan "+N" abu-abu (sinyal risiko hilang). Di mode sempit: baris tag TIDAK
+ * melipat; tag PERTAMA (peringatan, urutan model) selalu tampil, terpotong elipsis bila perlu; tag berikutnya dilepas
+ * selama ada yang meluap atau tag pertama terpotong; "+N" bernada peringatan bila yang tersembunyi memuat peringatan.
+ * Di luar mode sempit perilaku = master (760-1440 identik).
  */
-function MintLineBnb({ address, tags }: { address: string; tags: Tag[] }) {
+function TagLineFit({ tags, sempit = false }: { tags: Tag[]; sempit?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null)
   const [tampil, setTampil] = useState(tags.length)
   // tag pertama (peringatan) muat sendirian tapi tidak bersama "+N" → tag itu yang dipertahankan, "+N" dilepas
@@ -153,14 +204,31 @@ function MintLineBnb({ address, tags }: { address: string; tags: Tag[] }) {
   useLayoutEffect(() => {
     setTampil(tags.length)
     setTanpaPlus(false)
-  }, [kunci, tags.length])
+  }, [kunci, tags.length, sempit])
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
+    if (sempit) {
+      // satu baris tanpa lipatan: lepas tag dari belakang selama ada yang meluap ke kanan atau tag pertama terpotong,
+      // tapi tag pertama tak pernah dilepas (ia menyusut + elipsis; "+N" tak menyusut)
+      const kanan = el.getBoundingClientRect().right
+      const luap = [...el.querySelectorAll<HTMLElement>('.pt-tag, .pt-more')].some((b) => b.getBoundingClientRect().right > kanan + 1)
+      const pertama = el.querySelector<HTMLElement>('.pt-tag')
+      // U26d: tag ber-hitungan → yang menyusut & terpotong adalah bagian nama
+      const potong = pertama?.querySelector<HTMLElement>('.pt-tag-nama') ?? pertama
+      const terpotong = !!potong && potong.scrollWidth > potong.clientWidth + 1
+      if (tampil > 1) {
+        if (luap || terpotong) setTampil((n) => Math.max(1, n - 1))
+        return
+      }
+      // tinggal tag pertama & ia terpotong: "+N" dilepas (spt master) hanya bila yang tersembunyi tak memuat peringatan
+      if (terpotong && !tanpaPlus && !tags.slice(1).some((t) => t.tone === 'warn')) setTanpaPlus(true)
+      return
+    }
     // turun baris = bergeser ≥ setengah tinggi baris (pemicu popover bisa duduk 1-2px lebih rendah di baris yang sama)
     const atas = el.getBoundingClientRect().top
     const turun = (sel: string) => [...el.querySelectorAll<HTMLElement>(sel)].some((b) => b.getBoundingClientRect().top - atas >= el.clientHeight / 2)
-    const tagTurun = turun('.pt-mint, .pt-tag')
+    const tagTurun = turun('.pt-tag')
     if (!tagTurun && !turun('.pt-more')) return
     if (!tagTurun && tampil === 1) setTanpaPlus(true)
     else setTampil((n) => Math.max(0, n - 1))
@@ -180,12 +248,15 @@ function MintLineBnb({ address, tags }: { address: string; tags: Tag[] }) {
     return () => ro.disconnect()
   }, [tags.length])
   const sisa = tags.length - Math.min(tampil, tags.length)
+  const tersembunyi = tags.slice(tags.length - sisa)
   return (
     <span className="pt-mintline" ref={ref}>
-      <span className="pt-mint">{alamatPendek(address)}</span>
-      <TagLine tags={tags} max={tampil} />
+      <TagLine tags={tags} max={tampil} sempit={sempit} />
       {sisa > 0 && !tanpaPlus && (
-        <span className="pt-more" title={tags.slice(tags.length - sisa).map((t) => t.label).join(', ')}>
+        <span
+          className={`pt-more${sempit && tersembunyi.some((t) => t.tone === 'warn') ? ' is-warn' : ''}`}
+          title={tersembunyi.map((t) => t.label).join(', ')}
+        >
           +{sisa}
         </span>
       )}
@@ -193,10 +264,14 @@ function MintLineBnb({ address, tags }: { address: string; tags: Tag[] }) {
   )
 }
 
+/** U10: penjelas kepala MC SOL ("Δ launch"). */
+const INFO_DELTA_SOL =
+  'The % under market cap is the change since launch: the current price against the first price synt recorded for this pair. Token pages also show 5m, 1h and 24h changes from DexScreener, which cover other windows, so those numbers differ.'
+
 /* ── definisi kolom (lebar = preview) ── */
 
 const C: Record<string, Col> = {
-  score: { id: 'score', label: 'Score', width: '176px', sort: 'score', render: (m, c) => <Score m={m} compact={c.compact} /> },
+  score: { id: 'score', label: 'Score', width: '176px', sort: 'score', render: (m, c) => <Score m={m} compact={c.compact} spark={c.spark} /> },
   trend: {
     id: 'trend',
     label: 'Trend',
@@ -212,7 +287,12 @@ const C: Record<string, Col> = {
     render: (m) => (
       <span className="pt-stack">
         <Uang n={m.mcap} label="Market cap" />
-        {m.change.v === null || m.mcap.v === null ? (
+        {m.change.v === null && m.mcap.v !== null && m.chain === 'sol' ? (
+          // U16: "—" di bawah MC SOL bisa diketuk → sebabnya (mis. harga pertama mesin tak tercatat, kosong selamanya)
+          <span className="pt-delta pt-dim">
+            <InfoPopover info={m.change.why ?? 'Not measured yet.'} label="Change since launch">—</InfoPopover>
+          </span>
+        ) : m.change.v === null || m.mcap.v === null ? (
           <span className="pt-delta pt-dim">—</span>
         ) : (
           <span className={`pt-delta ${trendClass(m.change.v)}`}>
@@ -245,7 +325,11 @@ const C: Record<string, Col> = {
     width: '96px',
     align: 'r',
     render: (m) =>
-      m.change.v === null ? <span className="pt-dim">—</span> : <span className={trendClass(m.change.v)}>{(1 + m.change.v / 100).toFixed(2)}×</span>,
+      m.move.v === null ? (
+        m.chain === 'bnb' ? <Kosong why={m.move.why} label="Move" /> : <span className="pt-dim">—</span>
+      ) : (
+        <span className={trendClass(m.move.v)}>{(1 + m.move.v / 100).toFixed(2)}×</span>
+      ),
   },
   retention: {
     id: 'retention',
@@ -259,20 +343,13 @@ const C: Record<string, Col> = {
         <span className={m.retention.v >= 70 ? 'is-up' : 'is-down'}>{Math.round(m.retention.v)}%</span>
       ),
   },
-  buyers: {
-    id: 'buyers',
-    label: 'Buyers',
-    width: '96px',
-    align: 'r',
-    sort: 'buyers',
-    render: (m) => (m.holders.v === null ? <Kosong why={m.holders.why} label="Buyers" /> : <span>{hitung(m.holders.v)}</span>),
-  },
+  // BNB: slot TREND SOL (lebar sama) berisi outcome 90 mnt
   out: {
     id: 'out',
     label: 'At 90m',
-    width: '104px',
+    width: '92px',
     render: (m) =>
-      m.status ? <StatusChip label={m.status.label} tone={m.status.tone} info={m.status.info} /> : <span className="pt-dim">—</span>,
+      m.status ? <StatusChip label={m.status.label} tone={m.status.tone} info={m.status.info} /> : <Kosong why={m.statusWhy} label="At 90m" />,
   },
   risk: { id: 'risk', label: 'Top risk', width: 'minmax(200px, 1fr)', render: (m) => <Risk m={m} /> },
 }
@@ -283,16 +360,19 @@ const SET: Record<string, [string[], string[]]> = {
   'sol:trending': [['score', 'trend', 'mc', 'liq', 'pressure', 'curve', 'risk'], ['score', 'trend', 'mc', 'curve', 'pressure', 'risk']],
   'sol:bonding': [['score', 'trend', 'mc', 'liq', 'pressure', 'curve', 'risk'], ['score', 'trend', 'mc', 'curve', 'pressure', 'risk']],
   'sol:graduated': [['score', 'trend', 'mc', 'liq', 'move', 'retention', 'risk'], ['score', 'trend', 'mc', 'retention', 'pressure', 'risk']],
-  // BNB: feed tanpa lintasan skor → tanpa TREND; kolom khas (BUYERS, AT 90M) di slot kolom khas preview
-  'bnb:new': [['score', 'mc', 'curve', 'pressure', 'buyers', 'risk'], ['score', 'mc', 'curve', 'pressure', 'risk']],
-  'bnb:graduated': [['score', 'mc', 'liq', 'pressure', 'buyers', 'out', 'risk'], ['score', 'mc', 'liq', 'out', 'pressure', 'risk']],
+  // T1: BNB = set SOL tampilan yang sama; slot TREND → AT 90M (BNB dinilai sekali di menit 2, tanpa lintasan skor).
+  // Putaran 2: kolom yang KOSONG MENURUT KONSTRUKSI dilepas, urutan sisanya tetap SOL. New: LIQ → CURVE (semua pair
+  // New BNB di kurva, tak punya pool; CURVE ada di SOL Trending/Bonding). Graduated: tanpa MOVE & RETENTION (feed BNB
+  // belum membawa harga awal/retensi, usulan backend B13).
+  'bnb:new': [['score', 'out', 'mc', 'curve', 'pressure', 'risk'], ['score', 'out', 'mc', 'curve', 'pressure', 'risk']],
+  'bnb:graduated': [['score', 'out', 'mc', 'liq', 'risk'], ['score', 'out', 'mc', 'pressure', 'risk']],
 }
 
 /** Kunci sortir yang punya kepala kolom terlihat (chain · tampilan · panel terbuka). Sisanya lewat Sort ringkas di bar.
  *  Panel terbuka: tabel bisa membuang kolom lagi agar muat (lihat `BUANG`) → Trenches memakai `onTerlihat` bila ada. */
 export function kunciKepala(chain: 'sol' | 'bnb', view: PairView, compact: boolean): SortKey[] {
   // 'age' = kepala TOKEN (selalu ada; umur tak punya kolom sendiri) → Sort ringkas tak lagi selalu tampil
-  return kunciDari(kolom({ chain, view, compact }).cols)
+  return kunciDari(kolom({ chain, view, compact, spark: !compact }).cols)
 }
 
 function kunciDari(cols: Col[]): SortKey[] {
@@ -302,9 +382,33 @@ function kunciDari(cols: Col[]): SortKey[] {
 /* ⭐ Panel terbuka (izin pemilik 29 Okt): set ringkas tetap lebih lebar dari kartu di layar ≤1680 → WHY/TOP RISK &
    tombol Buy tergeser keluar kartu (scrollbar tersembunyi). Kolom dibuang berurutan dari sini sampai grid muat;
    TOKEN, SCORE, TOP RISK/WHY & aksi tak pernah dibuang. Sortir kolom yang dibuang tetap ada lewat Sort ringkas. */
-const BUANG = ['pressure', 'liq', 'curve', 'retention', 'move', 'out', 'buyers', 'trend', 'mc']
+// T1: 'out' (BNB) dibuang di giliran 'trend' (SOL) → kolom tersisa kedua chain sama di setiap lebar
+const BUANG = ['pressure', 'liq', 'curve', 'retention', 'move', 'out', 'trend', 'mc']
 const GAP = 12 // --sp-4 (gap grid)
 const PAD_BARIS = 16 * 2 // --sp-5 kiri+kanan .pt-row
+
+/* ⚠️ U21: kerangka statis index.html + styles/kerangka.css meniru template kolom (`kolom()`, ringkas & SEMPIT) dan tinggi
+   kepala/baris skeleton tabel ini. Ubah lebar/padding/jarak di sini → selaraskan di sana (uji: posisi baris statis =
+   keadaan memuat React). */
+/* ⭐ U6 (audit 7 Nov): ponsel. Set yang tersisa (TOKEN + SCORE + TOP RISK + aksi ≥ 678px) tetap tak muat di kartu
+   ponsel walau semua kolom BUANG dibuang → dulu MC ikut dibuang padahal tak menolong (grid tetap menggulir di dalam
+   kartu), sehingga di 390 hanya TOKEN & SCORE yang terlihat, tanpa harga pasar sama sekali. Kini: MC hanya dibuang bila
+   itu membuat grid muat; bila tetap tak muat ("sempit"), SCORE & MC memakai lebar isi ringkasnya dan TOKEN mengisi sisa
+   layar pertama → TOKEN · SCORE · MC (+Δ) terlihat tanpa menggulir. U26b: TOP RISK & aksi (Buy) kini baris kedua di
+   bawahnya (dulu di kanan kartu yang menggulir, tak terlihat tanpa petunjuk) → baris lebih tinggi, tanpa gulir samping. */
+const SEMPIT = {
+  /* U26c: lebar = lebar ISI (sel SCORE & MC tanpa padding dalam di mode sempit, CSS). Skor ringkas terlebar 89 (angka +
+     "24.9%/collapsed"); keadaan BNB tanpa skor melipat (CSS is-sempit). Dulu 96/68 + padding sel 2×6. */
+  score: 92,
+  // MC + Δ: SOL "$41.9K/−65.9%" ≤ 56 (diukur 8 Nov); BNB menulis jendela ("+605.3% 24h") yang turun ke baris sendiri
+  mc: { sol: 60, bnb: 72 },
+  // TOKEN terkecil: 360 px BNB = 90 (avatar 30 + teks); di bawahnya (≤ 340) kartu kembali menggulir sedikit
+  tokenMin: 88,
+  /* ⭐ U26b/c: padding kiri-kanan baris & jarak kolom di mode sempit (CSS `.pt.is-sempit`, --sp-3). Baris = dua baris
+     grid: TOKEN · SCORE · MC, lalu TOP RISK (selebar TOKEN+SCORE) · Buy (di bawah MC) → tanpa gulir samping. */
+  pad: 8,
+  gap: 8,
+}
 
 /** Lebar minimum (px) satu lebar kolom: '176px' / 'minmax(200px, 1fr)' → angka px pertama. */
 const minPx = (w: string) => Number(/(\d+)px/.exec(w)?.[1] ?? 0)
@@ -313,24 +417,43 @@ function lebarMin(token: string, cols: Col[], aksi: string): number {
   return minPx(token) + cols.reduce((a, c) => a + minPx(c.width), 0) + minPx(aksi) + GAP * (cols.length + 1) + PAD_BARIS
 }
 
-function kolom(ctx: Ctx, muat?: number | null): { cols: Col[]; template: string; minW: number } {
+function kolom(ctx: Ctx, muat?: number | null): { cols: Col[]; template: string; minW: number; sempit: boolean } {
   const [penuh, ringkas] = SET[`${ctx.chain}:${ctx.view}`] ?? SET['sol:new']!
   let cols = (ctx.compact ? ringkas : penuh).map((id) => {
     const c = C[id]!
     if (id !== 'risk') return c
-    // Panel terbuka: TOP RISK/WHY min. 180 (bukan 200) → di 1440 TREND (SOL) / CURVE (BNB) masih muat
-    return { ...c, ...(ctx.chain === 'bnb' && { label: 'Why' }), ...(ctx.compact && { width: 'minmax(180px, 1fr)' }) }
+    // Panel terbuka: TOP RISK min. 180 (bukan 200) → di 1440 TREND (SOL) / AT 90M (BNB) masih muat
+    return { ...c, ...(ctx.compact && { width: 'minmax(180px, 1fr)' }) }
   })
   // TOKEN diberi plafon (yang melar hanya TOP RISK); kolom aksi 92 (panel terbuka) / 104 — sama dgn preview
-  const token = ctx.compact ? 'minmax(150px, 250px)' : 'minmax(180px, 300px)'
+  let token = ctx.compact ? 'minmax(150px, 250px)' : 'minmax(180px, 300px)'
   const aksi = ctx.compact ? '92px' : '104px'
+  let sempit = false
   if (ctx.compact && muat) {
     for (const id of BUANG) {
       if (lebarMin(token, cols, aksi) <= muat) break
+      // U6: MC (giliran terakhir) hanya dibuang bila itu membuat grid muat
+      if (id === 'mc' && lebarMin(token, cols.filter((c) => c.id !== 'mc'), aksi) > muat) break
       cols = cols.filter((c) => c.id !== id)
     }
+    if (lebarMin(token, cols, aksi) > muat) {
+      sempit = true
+      /* ⭐ U26b (sisa U6): grid HANYA tiga kolom TOKEN · SCORE · MC selebar kartu (TOKEN = sisa, `1fr`); sel TOP RISK
+         & aksi turun ke baris grid kedua (CSS `.pt.is-sempit`), jadi tak ada lagi bagian baris di luar layar yang
+         hanya bisa dicapai lewat gulir samping tersembunyi. Dulu TOKEN = sisa layar pertama dgn padding KIRI saja →
+         di 360 kolom MC melewati tepi kartu ±14 px (U26c). */
+      const mc = SEMPIT.mc[ctx.chain]
+      cols = cols.map((c) => (c.id === 'score' ? { ...c, width: `${SEMPIT.score}px` } : c.id === 'mc' ? { ...c, width: `${mc}px` } : c))
+      const baris1 = cols.filter((c) => c.id !== 'risk')
+      return {
+        cols,
+        template: `minmax(${SEMPIT.tokenMin}px, 1fr) ${baris1.map((c) => c.width).join(' ')}`,
+        minW: SEMPIT.tokenMin + baris1.reduce((a, c) => a + minPx(c.width), 0) + SEMPIT.gap * baris1.length + SEMPIT.pad * 2,
+        sempit,
+      }
+    }
   }
-  return { cols, template: `${token} ${cols.map((c) => c.width).join(' ')} ${aksi}`, minW: lebarMin(token, cols, aksi) }
+  return { cols, template: `${token} ${cols.map((c) => c.width).join(' ')} ${aksi}`, minW: lebarMin(token, cols, aksi), sempit }
 }
 
 export function PairTable({
@@ -346,6 +469,7 @@ export function PairTable({
   sortKeys,
   onSort,
   onTerlihat,
+  onSempit,
 }: {
   rows: PairModel[]
   chain: 'sol' | 'bnb'
@@ -364,6 +488,8 @@ export function PairTable({
   onSort?: (s: Sort) => void
   /** Kunci sortir yang kepalanya benar-benar tampil (berubah saat panel terbuka membuang kolom agar muat). */
   onTerlihat?: (keys: SortKey[]) => void
+  /** U26b putaran 2: tabel masuk/keluar mode sempit (tanpa chevron detail) → panel/sheet menampilkan isi detail itu. */
+  onSempit?: (sempit: boolean) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -393,17 +519,36 @@ export function PairTable({
     return () => ro.disconnect()
   }, [compact])
 
-  const ctx: Ctx = { chain, view, compact }
-  const { cols, template, minW } = kolom(ctx, compact ? muat : null)
+  /* ⭐ U15 (audit 7 Nov): `ctx`, kolom & callback baris berIDENTITAS STABIL → `Row` (memo) hanya dirender ulang bila
+     isinya berubah. Dulu objek/fungsi baru tiap render membuat 50 baris dirender ulang di setiap jawaban poll 5 dtk
+     walau isinya sama (Trenches SOL graduated ±406 ms script/menit dgn hanya 7 mutasi DOM; BNB ±722 ms). */
+  const dasar = useMemo(() => ({ chain, view, compact, spark: !compact }), [chain, view, compact])
+  const { cols, template, minW, sempit } = useMemo(() => kolom(dasar, compact ? muat : null), [dasar, compact, muat])
+  /* U14: sparkline mengikuti LEBAR kartu (`muat`, ResizeObserver), bukan boolean panel. Sebelum lebar pertama terukur
+     (muat null) tetap tanpa sparkline spt dulu → tak ada kedipan sparkline di ponsel. */
+  const spark = !compact || (muat !== null && !sempit)
+  const ctx: Ctx = useMemo(() => ({ ...dasar, spark }), [dasar, spark])
+  // onSelect dari Trenches = fungsi baru tiap render → dibaca lewat ref, baris menerima pembungkus yang tetap
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+  const pilih = useCallback((id: string) => onSelectRef.current(id), [])
+  const toggle = useCallback((id: string) => setExpanded((cur) => (cur === id ? null : id)), [])
+  // U26b: mode sempit tanpa chevron (detail = sheet) → baris yang terbuka sebelum menyempit (mis. jendela diperkecil) ditutup
+  useEffect(() => {
+    if (sempit) setExpanded(null)
+  }, [sempit])
   const terlihat = kunciDari(cols).join(',')
   useLayoutEffect(() => {
     onTerlihat?.(terlihat.split(',') as SortKey[])
   }, [terlihat, onTerlihat])
+  useLayoutEffect(() => {
+    onSempit?.(sempit)
+  }, [sempit, onSempit])
 
   return (
     <div
       ref={ref}
-      className={`pt ${compact ? 'is-compact' : ''}`}
+      className={`pt ${compact ? 'is-compact' : ''}${sempit ? ' is-sempit' : ''}`}
       role="table"
       aria-label={`${chain === 'sol' ? 'Solana' : 'BNB'} pairs, ${view}`}
       style={{ ['--pt-cols' as string]: template, ...(compact ? { ['--pt-min-w' as string]: `${minW}px` } : null) }}
@@ -436,7 +581,8 @@ export function PairTable({
             <span
               key={c.id}
               role="columnheader"
-              className={`pt-h ${c.align === 'r' ? 'ta-r' : ''}`}
+              // U26b: sempit → TOP RISK = baris kedua tiap baris (tanpa kepala terlihat; tetap terbaca pembaca layar)
+              className={`pt-h ${c.align === 'r' ? 'ta-r' : ''}${sempit && c.id === 'risk' ? ' sr-only' : ''}`}
               aria-sort={bisa ? (aktif === 'desc' ? 'descending' : aktif === 'asc' ? 'ascending' : 'none') : undefined}
             >
               {bisa ? (
@@ -451,6 +597,11 @@ export function PairTable({
                 </button>
               ) : (
                 c.label
+              )}
+              {/* ⭐ U10 (audit 7 Nov): persen di bawah MC SOL = sejak launch (harga kini vs harga pertama mesin), dulu tanpa
+                  label di tabel (hanya di panel). BNB menulis jendelanya di tiap sel ("+605.3% 24h") → tak perlu. */}
+              {c.id === 'mc' && chain === 'sol' && (
+                <InfoPopover info={INFO_DELTA_SOL} label="Change since launch" className="pt-hk">Δ launch</InfoPopover>
               )}
               {c.id === 'score' && provisional && (
                 <InfoPopover info={provisional} label="Provisional calibration" className="chip-trigger pt-prov-t">
@@ -468,8 +619,9 @@ export function PairTable({
           ? Array.from({ length: 8 }, (_, i) => (
               <div key={i} className="pt-row is-skeleton" role="row" aria-hidden="true">
                 <span className="pt-token"><i className="pt-sk pt-sk-av" /><i className="pt-sk pt-sk-l" /></span>
-                {cols.map((c) => <span key={c.id} className={c.align === 'r' ? 'ta-r' : ''}><i className="pt-sk" /></span>)}
-                <span />
+                {cols.map((c) => <span key={c.id} className={`${c.align === 'r' ? 'ta-r' : ''}${sempit && c.id === 'risk' ? ' pt-baris2' : ''}`}><i className="pt-sk" /></span>)}
+                {/* U26b: sempit → slot tombol Buy di baris kedua (tinggi baris skeleton = baris nyata) */}
+                {sempit ? <span className="pt-actions"><i className="pt-sk pt-sk-buy" /></span> : <span />}
               </div>
             ))
           : rows.map((m) => (
@@ -478,10 +630,11 @@ export function PairTable({
                 m={m}
                 cols={cols}
                 ctx={ctx}
+                sempit={sempit}
                 selected={m.id === selectedId}
                 expanded={expanded === m.id}
-                onSelect={onSelect}
-                onToggle={() => setExpanded((cur) => (cur === m.id ? null : m.id))}
+                onSelect={pilih}
+                onToggle={toggle}
               />
             ))}
       </div>
@@ -489,15 +642,49 @@ export function PairTable({
   )
 }
 
-function Row({ m, cols, ctx, selected, expanded, onSelect, onToggle }: {
+/** Perbandingan nilai polos (objek/array/primitif) — model baris dari adapter tak memuat fungsi/elemen React; bila
+    ada (`$$typeof`) atau terlalu dalam, dibandingkan identitasnya saja (aman: paling buruk baris dirender ulang). */
+function samaDalam(a: unknown, b: unknown, dalam = 0): boolean {
+  if (Object.is(a, b)) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null || dalam > 6) return false
+  if ('$$typeof' in a || '$$typeof' in b) return false
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
+    return a.every((x, i) => samaDalam(x, b[i], dalam + 1))
+  }
+  const ka = Object.keys(a)
+  if (ka.length !== Object.keys(b).length) return false
+  const oa = a as Record<string, unknown>, ob = b as Record<string, unknown>
+  return ka.every((k) => Object.prototype.hasOwnProperty.call(ob, k) && samaDalam(oa[k], ob[k], dalam + 1))
+}
+
+/**
+ * U15: baris sama bila modelnya sama ISI-nya (adapter membuat objek baru tiap poll) dan prop lain sama identitasnya.
+ * ⚠️ `ageSecs` DIKECUALIKAN: synt-dash menghitungnya dari jam di tiap jawaban (berubah tiap poll) padahal BARIS tak
+ * menggambarnya (umur hanya dipakai sortir di Trenches & panel, yang tetap menerima model terbaru). Bila kelak baris
+ * menampilkan umur, hapus pengecualian ini.
+ */
+function samaPropBaris(a: RowProps, b: RowProps): boolean {
+  return (
+    a.cols === b.cols && a.ctx === b.ctx && a.sempit === b.sempit && a.selected === b.selected &&
+    a.expanded === b.expanded && a.onSelect === b.onSelect && a.onToggle === b.onToggle &&
+    (a.m === b.m || samaDalam({ ...a.m, ageSecs: null }, { ...b.m, ageSecs: null }))
+  )
+}
+
+type RowProps = {
   m: PairModel
   cols: Col[]
   ctx: Ctx
+  /** U6: mode ponsel (kolom TOKEN sempit) → baris tag BNB satu baris dgn tag peringatan pertama selalu tampil. */
+  sempit: boolean
   selected: boolean
   expanded: boolean
   onSelect: (id: string) => void
-  onToggle: () => void
-}) {
+  onToggle: (id: string) => void
+}
+
+const Row = memo(function Row({ m, cols, ctx, sempit, selected, expanded, onSelect, onToggle }: RowProps) {
   return (
     <div className={`pt-item ${expanded ? 'is-expanded' : ''}`}>
       <div
@@ -516,7 +703,8 @@ function Row({ m, cols, ctx, selected, expanded, onSelect, onToggle }: {
         <span role="cell" className="pt-token">
           {/* ukuran baris = --av-row (34, preview) lewat PairTable.css; `md` hanya memilih ukuran inisial */}
           <Avatar name={m.symbol} src={m.image} size="md" />
-          <span className="pt-token-id">
+          {/* T1: BNB bertag = tiga tingkat dirapatkan (.has-tags) → tinggi baris tetap 72 spt baris SOL */}
+          <span className={`pt-token-id${m.chain === 'bnb' && (m.rowTags ?? m.tags).length > 0 ? ' has-tags' : ''}`}>
             <Link
               to={m.href}
               className="pt-symbol"
@@ -526,20 +714,14 @@ function Row({ m, cols, ctx, selected, expanded, onSelect, onToggle }: {
               {m.symbol}
             </Link>
             {/* ⭐ Alamat, bukan handle sosial: simbol tidak unik, alamat bisa diverifikasi di explorer */}
-            {/* SOL: label P2 di baris sendiri (preview). BNB: tag sebaris dgn alamat → baris tetap 2 tingkat, tinggi 72 */}
-            {m.chain === 'bnb' ? (
-              <MintLineBnb address={m.address} tags={m.tags} />
-            ) : (
-              <>
-                <span className="pt-mint">{alamatPendek(m.address)}</span>
-                <TagLine tags={m.tags} />
-              </>
-            )}
+            {/* SOL: label P2 di baris sendiri (preview). T1: BNB sama, tag baris di bawah alamat dlm satu baris (+N) */}
+            <span className="pt-mint">{alamatPendek(m.address)}</span>
+            {m.chain === 'bnb' ? (m.rowTags ?? m.tags).length > 0 && <TagLineFit tags={m.rowTags ?? m.tags} sempit={sempit} /> : <TagLine tags={m.tags} />}
           </span>
         </span>
 
         {cols.map((c) => (
-          <span key={c.id} role="cell" className={`pt-cell ${c.align === 'r' ? 'pt-num' : ''}`}>
+          <span key={c.id} role="cell" className={`pt-cell ${c.align === 'r' ? 'pt-num' : ''}${sempit && c.id === 'risk' ? ' pt-baris2' : ''}`}>
             {c.render(m, ctx)}
           </span>
         ))}
@@ -552,7 +734,7 @@ function Row({ m, cols, ctx, selected, expanded, onSelect, onToggle }: {
             aria-label={expanded ? 'Hide details' : 'Show details'}
             onClick={(e) => {
               e.stopPropagation()
-              onToggle()
+              onToggle(m.id)
             }}
             onKeyDown={(e) => e.stopPropagation()}
           >
@@ -566,7 +748,7 @@ function Row({ m, cols, ctx, selected, expanded, onSelect, onToggle }: {
       {expanded && <Expand m={m} />}
     </div>
   )
-}
+}, samaPropBaris)
 
 /** Detail baris (preview `ExpandPanel`): base rate, ringkasan lintasan skor, salin alamat, tautan audit penuh. */
 function Expand({ m }: { m: PairModel }) {

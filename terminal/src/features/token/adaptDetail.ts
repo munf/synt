@@ -6,7 +6,7 @@ import type {
 } from '@/api/types'
 import type { CoinDetail, Candle, Holder, ScoreFactor, ScorePoint, Swap } from './detail'
 import { alamatPendek, umur } from '@/lib/format'
-import { buktiPumpMesin, judulLaunchpad, launchpadTampil, likuiditasUsd, pasarPascaLulusBelumDimuat } from './labels'
+import { buktiPumpMesin, judulLaunchpad, launchpadTampil, likuiditasUsd, pasarPascaLulusBelumDimuat, sejakLaunchTakTercatat } from './labels'
 
 /* ─────────────────────────────────────────────────────────────────────────
    Jembatan API → `CoinDetail` (halaman /coin/:mint).
@@ -200,6 +200,7 @@ export function adaptCoinDetail(
     // ⭐ 1c: `change_pct` = harga kini / harga pertama `v10_flow` − 1 (synt-dash api.rs) → "since launch"
     // ⭐ P2: lulus, harga pasca-lulus belum dimuat synt → persen & MC = angka kelulusan beku → null ("—") + catatan di halaman
     changeSinceLaunch: beku ? null : a.change_pct ?? null,
+    sinceLaunchNever: !beku && sejakLaunchTakTercatat(a, (a.window_secs ?? 0) > 0),
     marketNotLoaded: beku,
     // ⛔ 1c: synt-dash menghitung MC = harga × SUPPLY_PUMPFUN → hanya bermakna utk token pump.fun; token tanpa bukti
     // pump.fun tak sampai ke halaman penuh (CoinDetailView → TakDilacak)

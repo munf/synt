@@ -96,6 +96,11 @@
 .pt-sort:hover .pt-sort-i, .pt-sort:focus-visible .pt-sort-i { visibility: visible; }
 .pt-sort.is-active .pt-sort-i { color: var(--ink); }
 
+/* U10: "Δ launch" di kepala MC SOL = pemicu popover (teks kepala redup, garis titik-titik bawaan pemicu). Di kolom MC
+   sempit (68 px, ponsel) turun ke bawah "MC" lewat lipatan kepala `is-sempit` yang sudah ada. */
+.ip-trigger.pt-hk { font-weight: var(--fw-medium); color: var(--mute-2); white-space: nowrap; }
+.ip-trigger.pt-hk:hover, .ip-trigger.pt-hk[aria-expanded='true'] { color: var(--mute); }
+
 /* chip Provisional (BNB) di kepala Score */
 .ip-trigger.pt-prov-t { text-decoration: none; }
 .pt-prov {
@@ -137,7 +142,7 @@
 .pt-tag.is-warn { color: var(--warn); }
 .pt-tags > * + * .pt-tag::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); }
 
-/* BNB: alamat + tag dlm SATU baris setinggi teks. Tag yang tak muat utuh turun ke baris ke-2 yang tersembunyi
+/* BNB (T1): tag baris di bawah alamat (tempat label P2 SOL) dlm SATU baris setinggi teks. Tag yang tak muat utuh turun ke baris ke-2 yang tersembunyi
    (hilang utuh, tak pernah terpotong jadi "Name r…"); semua tag tetap di panel. */
 .pt-mintline {
   display: flex;
@@ -153,9 +158,18 @@
 .pt-mintline .pt-tag { line-height: var(--lh-base); white-space: nowrap; }
 .pt-mintline .ip-trigger,
 .pt-mintline .pt-tag-w { line-height: var(--lh-base); }
-.pt-mintline > .pt-mint + .pt-tags > :first-child .pt-tag::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); }
 .pt-more { font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pt-more::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); }
+.pt-mintline > .pt-more:first-child::before { content: none; }
+/* T1: simbol + alamat + baris tag BNB dlm 48px isi (baris 72 dikurangi padding 2×12), sama padatnya dgn SOL */
+.pt-token-id.has-tags { gap: 1px; }
+.pt-token-id.has-tags .pt-symbol { line-height: 18px; }
+.pt-token-id.has-tags .pt-mint { line-height: 14px; }
+.pt-token-id.has-tags .pt-mintline { height: 13px; line-height: 13px; }
+.pt-token-id.has-tags .pt-mintline .pt-tag,
+.pt-token-id.has-tags .pt-mintline .ip-trigger,
+.pt-token-id.has-tags .pt-mintline .pt-tag-w,
+.pt-token-id.has-tags .pt-more { line-height: 13px; }
 
 /* ── kolom angka ── */
 .pt-cell { min-width: 0; padding-inline: var(--sp-2); }
@@ -177,6 +191,61 @@
 
 /* ── skor: angka telanjang (tanpa kotak) + sparkline + base rate ── */
 .pt-score { display: flex; align-items: center; gap: var(--sp-3); }
+/* U6: ponsel ("sempit", PairTable `SEMPIT`): TOKEN · SCORE · MC muat di layar pertama. Keadaan skor BNB ("Scoring at 2m ?
+   in 81s") boleh melipat di kolom skor yang sempit (≤ 3 baris 11px, muat di baris 72); avatar–teks lebih rapat. */
+.pt.is-sempit .pt-score-base { white-space: normal; }
+.pt.is-sempit .pt-token { gap: var(--sp-3); }
+/* chip Provisional (BNB) di kepala SCORE yang sempit turun ke bawah "SCORE", tak menjorok ke kepala MC */
+.pt.is-sempit .pt-head .pt-h { flex-wrap: wrap; row-gap: var(--sp-1); }
+/* U6 putaran 2: baris tag BNB di kolom TOKEN sempit = satu baris tanpa lipatan; tag pertama (peringatan) menyusut &
+   terpotong elipsis, tag lain & "+N" tak menyusut (PairTable `TagLineFit`). "+N" yang menyembunyikan peringatan = amber. */
+.pt.is-sempit .pt-mintline { flex-wrap: nowrap; }
+.pt.is-sempit .pt-mintline > .pt-tags > * { flex-shrink: 0; }
+.pt.is-sempit .pt-mintline > .pt-tags > :first-child { flex-shrink: 1; min-width: 0; max-width: 100%; overflow: hidden; }
+.pt.is-sempit .pt-mintline > .pt-tags > :first-child .pt-tag { display: block; overflow: hidden; text-overflow: ellipsis; }
+.pt.is-sempit .pt-more { flex-shrink: 0; }
+.pt.is-sempit .pt-more.is-warn { color: var(--warn); }
+/* ⭐ U26a (catatan Reviewer U6): label P2 SOL ("Post-graduation market not loaded", TagLine langsung di .pt-token-id)
+   di kolom TOKEN sempit dulu melipat 4 baris → baris 118px di 390/360 (105 di 414). Kini satu baris + elipsis (amber
+   tetap), teks utuh di aria-label & penjelasan di popover ketuk yang sudah ada; simbol/alamat/label dirapatkan spt
+   baris BNB bertag (.has-tags) → 72px spt baris lain. Hanya mode sempit; ≥ 561 px = master. */
+.pt.is-sempit .pt-token-id:has(> .pt-tags) { gap: 1px; }
+.pt.is-sempit .pt-token-id:has(> .pt-tags) .pt-symbol { line-height: 18px; }
+.pt.is-sempit .pt-token-id:has(> .pt-tags) .pt-mint { line-height: 14px; }
+.pt.is-sempit .pt-token-id > .pt-tags { flex-wrap: nowrap; }
+.pt.is-sempit .pt-token-id > .pt-tags > * { min-width: 0; max-width: 100%; overflow: hidden; }
+.pt.is-sempit .pt-token-id > .pt-tags .pt-tag {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 13px;
+}
+/* ⭐ U26b/c (sisa U6): mode sempit = grid TIGA kolom selebar kartu (TOKEN 1fr · SCORE · MC, PairTable `kolom()`), padding
+   & jarak dirapatkan ke --sp-3 (angka sama dgn `SEMPIT.pad/gap`). Sel TOP RISK & aksi turun ke baris grid kedua: TOP RISK
+   selebar TOKEN+SCORE, Buy di bawah MC. Chevron detail disembunyikan: ketuk baris membuka sheet yang memuat isinya
+   (base rate, salin alamat, "Open full audit") + TOP RISK lengkap; putaran 2: lintasan skor + sparkline & "A score is an
+   audit, not a guarantee." ikut di panel/sheet (PairPanel `LintasanSkor`, hanya saat sempit). Tanpa gulir samping di dalam kartu. */
+.pt.is-sempit .pt-head,
+.pt.is-sempit .pt-row { padding-inline: var(--sp-3); column-gap: var(--sp-3); }
+.pt.is-sempit .pt-row { row-gap: var(--sp-3); }
+/* U26c: avatar 30 (dulu 34) & sel tanpa padding dalam → TOKEN muat simbol + alamat Solana utuh di 360 px; alamat yang
+   tetap lebih lebar dari sel (EVM di ≤ 380 px) dipotong elipsis di DALAM sel, tak lagi melewatinya */
+.pt.is-sempit { --av-row: 30px; }
+.pt.is-sempit .pt-cell { padding-inline: 0; }
+.pt.is-sempit .pt-mint { overflow: hidden; text-overflow: ellipsis; }
+.pt.is-sempit .pt-baris2 { grid-column: 1 / 3; padding-inline: 0; }
+.pt.is-sempit .pt-actions { padding-left: 0; min-height: 28px; }
+.pt.is-sempit .pt-expand { display: none; }
+.pt.is-sempit .pt-buy { height: 28px; padding: 0 var(--sp-3); }
+.pt.is-sempit .pt-sk-buy { width: 100%; height: 28px; border-radius: var(--r-md); }
+/* skeleton: baris pertama setinggi simbol + alamat (40) → tinggi baris skeleton = baris nyata (U21) */
+.pt.is-sempit .pt-row.is-skeleton > .pt-token { min-height: 40px; }
+/* U26d: tag ber-hitungan ("Name reused ×36") → hanya nama yang terpotong, hitungan tetap utuh */
+.pt.is-sempit .pt-mintline > .pt-tags > :first-child .pt-tag.has-hitung,
+.pt.is-sempit .pt-token-id > .pt-tags .pt-tag.has-hitung { display: flex; }
+.pt-tag.has-hitung > .pt-tag-nama { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-tag.has-hitung > .pt-tag-hitung { flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .pt-score-num {
   font-family: var(--font-mono);
   font-size: var(--fs-score-row);
@@ -197,6 +266,9 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* T1: BNB tanpa skor (Quiet / Scoring at 2m) dlm anatomi sel skor: keadaan di baris pertama base rate + ikon "?" */
+.pt-score-state { display: inline-flex; align-items: center; color: var(--dim-2); }
+.pt-score.is-empty .ip-trigger.ip-q { width: 14px; height: 14px; vertical-align: 0; }
 .pt .tt-spark { width: 84px; height: 22px; }
 .pt .tt-spark path { fill: none; stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .pt .tt-spark path.is-up { stroke: var(--up); }

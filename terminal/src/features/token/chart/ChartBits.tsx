@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { ActionType, type Chart, type KLineData } from 'klinecharts'
-import { hargaSatuan, umur } from '@/lib/format'
+import { hargaSatuan } from '@/lib/format'
 import { waktuStrip } from './kanvas'
 import './chart.css'
+
+// U1 (7 Nov): potongan TANPA klinecharts (skeleton, catatan data lama, detak) pindah ke `ChartRingan.tsx` supaya
+// halaman token bisa memakainya tanpa ikut memuat pustaka chart. Diekspor ulang di sini utk pemakai lama.
+export { CatatanBasi, ChartGagal, ChartSkeleton, useDetak } from './ChartRingan'
 
 /* ─────────────────────────────────────────────────────────────────────────
    A5: potongan chart BERSAMA SOL & BNB (keduanya KLineChart Pro sejak R2): strip OHLC di atas kanvas,
@@ -13,13 +17,15 @@ import './chart.css'
  * Strip OHLC di ATAS kanvas (pengganti tooltip kanvas yang di 390 menutupi candle). Menampilkan candle di bawah
  * crosshair, atau candle terakhir bila crosshair tak aktif. Harga = `hargaSatuan` (format kartu, nol subskrip).
  */
-export function StripOhlc({ k, satuan, tz, ekstra, hover }: {
+export function StripOhlc({ k, satuan, tz, ekstra, hover, akhir }: {
   k: KLineData | null
   satuan: string | null
   tz: string
   /** Kolom tambahan per chain, mis. SOL "SOL in curve". */
   ekstra?: (k: KLineData) => { label: string; value: string }[]
   hover: boolean
+  /** U7: chart berhenti di akhir data kurva (token lulus) → candle terakhir ≠ harga kini, label bukan "latest". */
+  akhir?: boolean
 }) {
   if (!k) return <div className="ck-ohlc" aria-hidden="true" />
   const naik = k.close > k.open ? 'is-up' : k.close < k.open ? 'is-down' : ''
@@ -34,7 +40,12 @@ export function StripOhlc({ k, satuan, tz, ekstra, hover }: {
     <div className="ck-ohlc" aria-live="off">
       <span className="ck-ohlc-t">
         {waktuStrip(k.timestamp, tz)}
-        {!hover && <span className="ck-ohlc-last"> latest</span>}
+        {!hover && (
+          <span className="ck-ohlc-last">
+            {/* U7: strip ponsel = 2 baris tetap tanpa ruang utk label panjang (390: sisa ±12 px) → "final" ≤760 */}
+            {akhir ? <><span className="ck-akhir-l"> end of curve data</span><span className="ck-akhir-s"> final</span></> : ' latest'}
+          </span>
+        )}
       </span>
       {sel.map((s) => (
         <span key={s.label} className="ck-ohlc-i">
@@ -84,51 +95,3 @@ export function useCandleTerakhir(chart: Chart | null): KLineData | null {
   return k
 }
 
-/** Kerangka saat chart memuat (blok `--raise`, tanpa shimmer; DESIGN §2 SkeletonCard). */
-export function ChartSkeleton() {
-  return (
-    <div className="ck-skel" role="status" aria-label="Loading chart">
-      <div className="ck-skel-bar" />
-      <div className="ck-skel-plot">
-        {[38, 52, 44, 61, 57, 70, 64, 48, 55, 66, 72, 59].map((h, i) => (
-          <i key={i} style={{ height: `${h}%` }} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** Chart gagal dimuat dan belum ada data sama sekali. */
-export function ChartGagal() {
-  return (
-    <div className="pcp-empty ck-fail" role="status">
-      <p>Couldn&rsquo;t load the chart.</p>
-      <p className="pcp-empty-sub">Retrying automatically.</p>
-    </div>
-  )
-}
-
-/** Detak ulang tiap `ms` supaya teks "N ago" ikut bergerak tanpa menunggu polling berikutnya. */
-export function useDetak(ms: number, aktif = true): number {
-  const [t, setT] = useState(() => Date.now())
-  useEffect(() => {
-    if (!aktif) return
-    const id = setInterval(() => setT(Date.now()), ms)
-    return () => clearInterval(id)
-  }, [ms, aktif])
-  return t
-}
-
-/**
- * ⭐ A5: polling gagal tapi data lama masih ada → data itu TETAP tampil + catatan kecil ini. `sejak` = epoch ms jawaban
- * sukses terakhir; null → catatan tanpa umur.
- */
-export function CatatanBasi({ sejak, className = '' }: { sejak: number | null; className?: string }) {
-  const kini = useDetak(15_000)
-  const umurTeks = sejak !== null ? umur(Math.max(0, (kini - sejak) / 1000)) : null
-  return (
-    <p className={`ck-stale ${className}`} role="status">
-      {umurTeks ? `Couldn’t refresh, showing data from ${umurTeks} ago.` : 'Couldn’t refresh, showing the last data.'}
-    </p>
-  )
-}

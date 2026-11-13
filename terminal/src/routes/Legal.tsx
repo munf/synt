@@ -7,7 +7,7 @@ import './Legal.css'
  * Privacy & Terms — `/privacy`, `/terms`, EN & ID (versi Indonesia yang berlaku, Pasal 16).
  *
  * ⚠️ DRAF (1 Nov) untuk ditinjau pemilik + penasihat hukum; banner "Draft" WAJIB tetap ada sampai disetujui.
- * Bentuk & gaya mengikuti eel.synt.fun/privasi & /syarat (synteel), perusahaan yang sama.
+ * Bentuk & gaya mengikuti eel.synt.fun/privasi & /syarat (synteel). Pengelola synt = perorangan (10 Nov), bukan PT.
  * Isi halaman adalah JANJI kepada pengguna, jadi tiap kalimat harus cocok dgn kenyataan sistem:
  * - cookie `__Host-synt_sesi` 30 hari, hash token saja (synt-akun/src/api.rs)
  * - IP hanya di memori utk rem laju, tak disimpan (synt-akun/src/batas.rs)
@@ -21,35 +21,26 @@ import './Legal.css'
 type Bahasa = 'en' | 'id'
 const KUNCI_BAHASA = 'synt.legal.lang'
 
-/** pilihan tersimpan → bahasa browser Indonesia → zona waktu Indonesia → EN (sama dgn synteel) */
+/** pilihan tersimpan → EN (keputusan pemilik 4 Nov: bawaan bahasa Inggris; Indonesia lewat tombol bahasa) */
 function bahasaAwal(): Bahasa {
   try {
     const l = localStorage.getItem(KUNCI_BAHASA)
     if (l === 'en' || l === 'id') return l
   } catch {
-    /* tanpa localStorage: tebak dari browser */
+    /* tanpa localStorage: bawaan */
   }
-  const bahasa = navigator.languages ?? [navigator.language ?? '']
-  let zona = ''
-  try {
-    zona = Intl.DateTimeFormat().resolvedOptions().timeZone ?? ''
-  } catch {
-    /* zona tak terbaca */
-  }
-  return bahasa.some((x) => /^(id|in)(-|$)/i.test(x)) || /^Asia\/(Jakarta|Pontianak|Makassar|Jayapura)$/.test(zona)
-    ? 'id'
-    : 'en'
+  return 'en'
 }
 
 const TEKS = {
   en: {
     draf: 'Draft for review. This document is not yet in effect.',
-    diperbarui: 'Last updated 3 November 2026',
+    diperbarui: 'Last updated 10 November 2026',
     pilih: 'Language',
   },
   id: {
     draf: 'Draf untuk ditinjau. Dokumen ini belum berlaku.',
-    diperbarui: 'Terakhir diperbarui 3 November 2026',
+    diperbarui: 'Terakhir diperbarui 10 November 2026',
     pilih: 'Bahasa',
   },
 } as const
@@ -83,7 +74,7 @@ function Kerangka({ judul, isi }: { judul: Record<Bahasa, string>; isi: Record<B
                 ))}
               </div>
             </div>
-            <p className="lg-meta">PT Synt Tekno Multikarya</p>
+            <p className="lg-meta">Muhammad Fajar Nugraha</p>
             <h1>{judul[bahasa]}</h1>
             <p className="lg-meta">{t.diperbarui}</p>
           </header>

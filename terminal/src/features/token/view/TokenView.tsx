@@ -5,7 +5,7 @@ import { nadaDariBase } from '@/components/ScoreCell'
 import { useCopy } from '@/lib/useCopy'
 import { useWatchlist } from '@/lib/useWatchlist'
 import { alamatPendek } from '@/lib/format'
-import { CatatanBasi } from '../chart/ChartBits'
+import { CatatanBasi } from '../chart/ChartRingan'
 import { persenRuntuh, type BarisFakta, type Delta, type ModelBeliJual, type ModelSkor, type SelStrip, type TabModel, type TautanKepala, type TokenViewModel } from './model'
 import './TokenView.css'
 
@@ -122,7 +122,7 @@ function Tautan({ tautan, catatan }: { tautan: TautanKepala[]; catatan?: string 
 /** Tile metrik kepala (preview `cd-metric`). "—" dgn sebab → popover ketuk. */
 function Tile({ x }: { x: SelStrip }) {
   return (
-    <div className="cd-metric">
+    <div className={`cd-metric${x.lipat ? ' is-lipat' : ''}${x.hanyaSampai ? ` is-sampai-${x.hanyaSampai}` : ''}`}>
       <dt>{x.label}</dt>
       <dd className={x.tone}>
         <Nilai x={x} />
@@ -235,7 +235,8 @@ export function TokenSkeleton() {
     <div className="cd tv tv-skel" role="status" aria-label="Loading token">
       <header className="cd-head">
         <div className="cd-identity"><i className="sk sk-av" /><i className="sk sk-l" /></div>
-        <div className="cd-metrics">{Array.from({ length: 7 }, (_, i) => <i key={i} className="sk sk-cell" />)}</div>
+        {/* U17: sel ke-2 & ke-3 = posisi tile harga & Δ utama (tampil sampai 1080 px) */}
+        <div className="cd-metrics">{Array.from({ length: 7 }, (_, i) => <i key={i} className={`sk sk-cell${i === 1 || i === 2 ? ' is-sampai-1080' : ''}`} />)}</div>
       </header>
       <div className="cd-body">
         <div className="cd-main">
@@ -372,6 +373,8 @@ function Tabs({ tabs }: { tabs: TabModel[] }) {
 /**
  * Metrik dasar — kartu teratas sidebar (preview `MetricsCard`): harga besar + Δ, grid 2 kolom, pita beli/jual.
  * Urutan sidebar = keputusan pemilik: angka dulu, alat transaksi kemudian.
+ * ⭐ U17 (audit 7 Nov): grid hanya memuat yang TAK ada di strip kepala (SOL: Curve; BNB: Age, Curve, Tax). MC,
+ * likuiditas, holders, Top 10, Net flow, Buyers tinggal di kepala (satu tempat, terlihat di semua lebar).
  */
 function KartuHarga({ m }: { m: TokenViewModel }) {
   const h = m.harga
@@ -396,7 +399,7 @@ function KartuHarga({ m }: { m: TokenViewModel }) {
           <span className={`cd-mc-delta ${kelasDelta(u.value)}`}>{teksPersen(u.value)} {u.label}</span>
         )}
       </div>
-      <div className="cd-mc-grid">
+      {m.pasar.length > 0 && <div className="cd-mc-grid">
         {m.pasar.map((x) => (
           <div key={x.key} className="cd-stat">
             <span className="cd-stat-label">{x.label}</span>
@@ -404,7 +407,7 @@ function KartuHarga({ m }: { m: TokenViewModel }) {
             {x.note && <span className="cd-stat-note">{x.note}</span>}
           </div>
         ))}
-      </div>
+      </div>}
       {m.beliJual && <BeliJual bj={m.beliJual} />}
     </section>
   )

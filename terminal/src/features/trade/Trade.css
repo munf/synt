@@ -135,6 +135,20 @@
 .tr-toast-isi strong { font-size: var(--fs-lg); font-weight: var(--fw-semibold); overflow-wrap: anywhere; }
 .tr-toast-isi span { font-size: var(--fs-base); color: var(--dim); overflow-wrap: anywhere; }
 .tr-toast-isi a { font-size: var(--fs-base); color: var(--accent); }
+/* 4 Nov: "Report a problem" di kartu gagal → drawer Support; tampil seperti tautan di atasnya */
+.tr-toast-lapor {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: var(--fs-base);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.tr-toast-lapor:hover { color: var(--ink); }
 
 .tr-toast-tutup {
   flex-shrink: 0;

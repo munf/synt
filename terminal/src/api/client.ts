@@ -81,6 +81,8 @@ export const api = {
    * berbeda di sisi server (graduated 24 jam vs new 40 menit) yang tak bisa
    * direproduksi dari satu respons.
    */
+  /* ⚠️ U21: skrip <head> index.html memramuat URL feed ini (& `bnbTrenches`, `bnbCalibration`) PERSIS sama (query,
+     limit 50, header) agar browser memakai ulang jawabannya; ubah bentuk URL/fetch di sini → selaraskan di sana. */
   trenches: (view: string, limit = 50, signal?: AbortSignal) =>
     get<TrenchesResponse>(
       `/trenches?view=${encodeURIComponent(view)}&limit=${limit}`,

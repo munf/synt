@@ -141,6 +141,8 @@ export interface CoinDetail {
   /** ⭐ 1c: harga kini vs harga PERTAMA di `v10_flow` (synt-dash `harga_awal`) = sejak launch, BUKAN 24 jam.
    *  null = tak terukur. */
   changeSinceLaunch: number | null
+  /** U16: persen sejak launch PASTI kosong (harga pertama mesin tak tercatat, labels.ts `sejakLaunchTakTercatat`). */
+  sinceLaunchNever?: boolean
   /** ⭐ P2: lulus, harga pasca-lulus belum dimuat synt (labels.ts `pasarPascaLulusBelumDimuat`). MC & persen sudah null. */
   marketNotLoaded: boolean
   /** null = tak bisa dihitung jujur: mesin menghitung MC = harga × supply pump.fun (1 M), salah utk token non-pump. */

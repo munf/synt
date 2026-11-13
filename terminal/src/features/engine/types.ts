@@ -16,6 +16,7 @@
      throughput.scored_per_hour     → scoredPerHour
      throughput.selectivity_pct     → selectivityPct
      error_rate_pct                 → errorRatePct
+     cost.rpc_calls_this_hour       → rpcCallsThisHour (U24 putaran 2)
      metadata_coverage_pct          → metadataCoveragePct
      session.discovered             → discovered
      uptime_hours                   → uptimeHours
@@ -40,6 +41,9 @@ export interface EngineStatus {
   selectivityPct: number
 
   errorRatePct: number
+  /** Panggilan RPC jam berjalan (B15: getblock_rpc + shyft_rpc). 0 = belum ada panggilan tercatat → persentase galat
+   *  bukan pengukuran. null = field tak dikirim (permintaan publik). */
+  rpcCallsThisHour: number | null
   /** Jumlah error absolut satu jam terakhir — konteks bagi persentase. */
   errorsThisHour: number
   metadataCoveragePct: number

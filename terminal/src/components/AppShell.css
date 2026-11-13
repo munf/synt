@@ -8,7 +8,8 @@
      Dipasang di sini, BUKAN di .shell-main — elemen itu punya flex:1
      sehingga selalu meregang mengisi sisa tinggi dan padding-nya
      terlampaui. */
-  padding-bottom: var(--footer-h);
+  /* U23: + ruang pil early access selama tampil (DevNotice.css; 0 tanpa pil) */
+  padding-bottom: calc(var(--footer-h) + var(--dn-h, 0px));
 }
 
 .shell-top {
@@ -276,12 +277,14 @@
 /* Tahap C: tautan Notifications/Messages di menu akun & titik belum-dibaca di tombol akun HANYA di HP,
    tempat ikon lonceng/pesan disembunyikan (lihat @media 700px di atas). */
 .pop-menu a.pop-menu-hp,
+.pop-menu button.pop-menu-hp,
 .shell-dot-hp { display: none; }
 .shell-wallet { position: relative; }
 @media (max-width: 700px) {
-  .pop-menu a.pop-menu-hp { display: flex; }
+  .pop-menu a.pop-menu-hp,
+  .pop-menu button.pop-menu-hp { display: flex; }
   .shell-dot-hp { display: block; top: 2px; right: 2px; }
 }
 
 /* ikon header (lonceng/pesan) dipakai ulang di menu → samakan ukurannya dgn ikon menu lain */
-.pop-menu a.pop-menu-hp svg { width: 15px; height: 15px; }
+.pop-menu .pop-menu-hp svg { width: 15px; height: 15px; }

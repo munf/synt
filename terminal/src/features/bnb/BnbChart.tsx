@@ -4,7 +4,7 @@ import { KLineChartPro, DefaultDatafeed } from '@klinecharts/pro'
 import type { SymbolInfo, Period, DatafeedSubscribeCallback } from '@klinecharts/pro'
 import type { Chart, KLineData } from 'klinecharts'
 import type { BnbCandle } from '@/api/types'
-import { waktuCandle } from './bnbFormat'
+import { kalimatSatuanChart, waktuCandle } from './bnbFormat'
 import { gabungPeriode, gayakanKanvas, pasangLipatHarga, setelahFontSiap, zonaPembaca } from '@/features/token/chart/kanvas'
 import { StripOhlc, useCandleTerakhir, useCrosshair } from '@/features/token/chart/ChartBits'
 import { chartDiBalik } from '@/features/token/PriceChartPro'
@@ -102,7 +102,7 @@ class DatafeedBnb {
   }
 }
 
-export function BnbChart({ token, symbol, candles, graduated, unit, satuanTakTerbaca = false }: {
+export function BnbChart({ token, symbol, candles, graduated, unit, kurs = null, satuanTakTerbaca = false }: {
   /** Alamat kontrak (ticker Pro; ganti token = chart baru). */
   token: string
   symbol: string
@@ -115,6 +115,8 @@ export function BnbChart({ token, symbol, candles, graduated, unit, satuanTakTer
   satuanTakTerbaca?: boolean
   /** `candle_unit` B11: 'USD' atau simbol quote. null = satuan tak diketahui → ditulis jujur di catatan. */
   unit: string | null
+  /** U2: `quote_usd` (kurs USD satu quote) utk catatan satuan; null = tak diketahui. */
+  kurs?: number | null
 }) {
   const wadah = useRef<HTMLDivElement>(null)
   const data = useMemo<KLineData[]>(() => {
@@ -260,8 +262,8 @@ export function BnbChart({ token, symbol, candles, graduated, unit, satuanTakTer
         {`1 minute candles${unit ? ` in ${unit}` : ''} from bonding curve trades`}
         {graduated ? ' and, after graduation, DEX pool prices synt recorded, which can have gaps' : ''}
         {', in your time zone. 5m, 15m and 1h are combined from these 1 minute candles in your browser.'}
-        {unit ? '' : ' Price unit not reported.'}
-        {unit && unit !== 'USD' ? ` The USD rate of ${unit} is unknown, so prices stay in ${unit}.` : ''}
+        {/* U2: kalimat satuan dari satu fungsi bersama kartu (bnbFormat `kalimatSatuanChart`) */}
+        {unit !== 'USD' ? ` ${kalimatSatuanChart(unit, kurs)}` : ''}
       </p>
     </>
   )

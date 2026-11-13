@@ -1,9 +1,12 @@
-import { useCallback } from 'react'
-import { PriceChartPro } from './PriceChartPro'
+import { Suspense, lazy, useCallback } from 'react'
 import type { LanggananTik } from './PriceChartPro'
+import { ChartGagal, ChartSkeleton } from './chart/ChartRingan'
+import { SUB_GAGAL_UNDUH, muatChartSol } from './chart/muat'
+import { BatasGalat } from '@/lib/potongan'
 import { kursSolUsd } from './adaptDetail'
 import { api } from '@/api/client'
 import { usePolling } from '@/lib/usePolling'
+import { aliranMungkinHidup } from './aliran'
 
 /**
  * Chart yang mengambil datanya sendiri, plus langganan harga hidup.
@@ -25,16 +28,25 @@ import { usePolling } from '@/lib/usePolling'
  * ⚠️ Aliran SSE berhenti sendiri saat kurva lulus atau pair > 24 jam (synt-stream wss.rs / peta.rs). Itu bukan
  * gangguan: chart pair seperti itu memang diam.
  */
-/** Jendela peta synt-stream (peta.rs `JENDELA_JAM` = 24): pair lebih tua tak pernah disiarkan. */
-const JENDELA_ALIRAN_DETIK = 24 * 3600
+/**
+ * U1 (7 Nov): klinecharts + @klinecharts/pro (+ CSS Pro) dimuat MALAS bersama komponen chart → kepala & kartu halaman
+ * token tampil tanpa menunggu ±370 KB pustaka chart. Selama potongan itu dimuat tampil `ChartSkeleton` yang sama dgn
+ * keadaan "candle belum datang" (A5), jadi tak ada lompatan tata letak. Data candle & SSE di bawah sudah jalan paralel.
+ * Putaran 2: potongan tak terunduh → `ChartGagal` di kartu chart saja (BatasGalat), sisa halaman tetap.
+ */
+const PriceChartPro = lazy(() => muatChartSol().then((m) => ({ default: m.PriceChartPro })))
 
-export function PriceChartLive({ mint, symbol, ageSecs, lulus = false, sample = false }: {
+
+export function PriceChartLive({ mint, symbol, ageSecs, lulus = false, akhirKurva = false, sample = false }: {
   mint: string
   symbol: string
   /** P3: umur pair (detik) dari /api/token; null/tak sah → chart tanpa jam (lihat PriceChartPro). */
   ageSecs: number | null
   /** Mesin mencatat kurva sudah lulus (`complete`) → aliran kurva sudah berhenti, SSE tak dibuka. */
   lulus?: boolean
+  /** U7: token lulus menurut halaman (mesin ATAU RugCheck, sama dgn catatan amber chart) → candle terakhir = akhir
+   *  data kurva, bukan harga kini (penanda netral, strip "end of curve data"). */
+  akhirKurva?: boolean
   /** Halaman contoh (mint karangan, mode template): tanpa `/api/candles` & tanpa SSE. */
   sample?: boolean
 }) {
@@ -49,7 +61,8 @@ export function PriceChartLive({ mint, symbol, ageSecs, lulus = false, sample = 
 
   /* Putaran 2: SSE hanya dibuka bila synt-stream MUNGKIN masih menyiarkan pair ini (belum lulus, umur < 24 jam).
      Dibaca saat chart dibuat; pair yang lulus SAAT halaman terbuka: aliran berhenti sendiri. */
-  const bisaHidup = !sample && !lulus && ageSecs !== null && ageSecs < JENDELA_ALIRAN_DETIK
+  // U11 putaran 2: syarat yang SAMA dipakai Coin.tsx utk interval /api/token (`aliran.ts`)
+  const bisaHidup = !sample && aliranMungkinHidup(ageSecs, lulus)
 
   const langganTik = useCallback<LanggananTik>(
     (cb, sambung) => {
@@ -86,17 +99,22 @@ export function PriceChartLive({ mint, symbol, ageSecs, lulus = false, sample = 
   const kurs = kursSolUsd()
 
   return (
-    <PriceChartPro
-      mint={mint}
-      symbol={symbol}
-      candles={candles?.candles ?? null}
-      kurs={kurs}
-      mulaiMs={ageSecs !== null && Number.isFinite(ageSecs) && ageSecs >= 0 ? Date.now() - ageSecs * 1000 : null}
-      langganTik={bisaHidup ? langganTik : undefined}
-      // A5: skeleton saat muat pertama; galat → data terakhir tetap + "Couldn't refresh, showing data from N ago"
-      memuat={!sample && loading}
-      gagal={!sample && error !== null}
-      basiSejak={at}
-    />
+    <BatasGalat cadangan={<ChartGagal sub={SUB_GAGAL_UNDUH} />}>
+      <Suspense fallback={<ChartSkeleton />}>
+        <PriceChartPro
+          mint={mint}
+          symbol={symbol}
+          candles={candles?.candles ?? null}
+          kurs={kurs}
+          mulaiMs={ageSecs !== null && Number.isFinite(ageSecs) && ageSecs >= 0 ? Date.now() - ageSecs * 1000 : null}
+          langganTik={bisaHidup ? langganTik : undefined}
+          // A5: skeleton saat muat pertama; galat → data terakhir tetap + "Couldn't refresh, showing data from N ago"
+          memuat={!sample && loading}
+          gagal={!sample && error !== null}
+          basiSejak={at}
+          akhirKurva={akhirKurva}
+        />
+      </Suspense>
+    </BatasGalat>
   )
 }

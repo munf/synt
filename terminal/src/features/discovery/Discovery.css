@@ -42,7 +42,8 @@
   /* topbar + padding atas/bawah .shell-main. Route ini sengaja TIDAK
      memakai .page — paddingnya akan menambah tinggi dan memunculkan
      guliran halaman di atas guliran kolom. */
-  height: calc(100vh - var(--topbar-h) - var(--sp-5) - var(--sp-8) - var(--footer-h));
+  /* U23: + ruang pil early access selama tampil (DevNotice.css; 0 tanpa pil) */
+  height: calc(100vh - var(--topbar-h) - var(--sp-5) - var(--sp-8) - var(--footer-h) - var(--dn-h, 0px));
   min-height: 0;
 }
 

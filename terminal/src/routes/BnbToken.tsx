@@ -3,8 +3,12 @@ import type { BnbCalibrationResponse, BnbTokenDetail } from '@/api/types'
 import { ALAMAT_EVM, BSCSCAN_TOKEN, useBnbCalibration, useBnbToken } from '@/features/bnb/useBnb'
 import { TokenSkeleton, TokenView } from '@/features/token/view/TokenView'
 import { modelBnb } from '@/features/token/view/adaptBnb'
+import { muatChartBnb, pramuat } from '@/features/token/chart/muat'
 import '@/features/token/TokenPanel.css'
 import '@/features/bnb/Bnb.css'
+
+// U1 putaran 2: potongan chart (±114 KB gzip) mulai diunduh begitu modul rute ini dievaluasi, paralel dgn /api/bnb/token
+pramuat(muatChartBnb)
 
 /**
  * Halaman token BNB — `/bnb/:token` (butir 14, frontend B11).

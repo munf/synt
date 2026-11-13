@@ -11,6 +11,16 @@
   box-shadow: var(--shadow-sm), var(--edge-top);
 }
 
+/* ⭐ U21: kerangka panel (PairPanelSkeleton & index.html). Blok `.sk` = TokenView.css (A5). Tinggi minimum = kartu SOL
+   nyata di 561-1100 px (434 + 310, jarak 24) → tabel di bawahnya tak didorong saat data tiba. */
+.pp-skel-info { min-height: 434px; display: flex; flex-direction: column; gap: var(--sp-6); }
+.pp-skel-audit { min-height: 310px; }
+.pp-skel-head { display: flex; align-items: center; gap: var(--sp-4); }
+.pp-skel-head .sk-av { width: 48px; height: 48px; }
+.pp-skel .sk-num { margin-bottom: 0; }
+.pp-skel-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.pp-skel-tiles .sk { height: 64px; border-radius: var(--r-md); }
+
 .pp-card-title {
   margin: 0;
   font-size: var(--fs-base);
@@ -212,7 +222,8 @@ span.pp-icon-btn { cursor: default; }
   align-items: center;
   gap: var(--sp-2);
   margin: var(--sp-1) 0 0;
-  font-size: var(--fs-xs);
+  /* U9 (audit 7 Nov): baris ini = base rate (wajib dibaca, PRODUK.md §0) → ≥ --fs-sm, bukan label mikro 10px */
+  font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   color: var(--accent);
 }
@@ -266,6 +277,13 @@ span.pp-icon-btn { cursor: default; }
 .pp-why > .pp-reason-title:first-child { margin-top: var(--sp-6); }
 .pp-reason { margin: 0; font-size: var(--fs-base); line-height: var(--lh-base); color: var(--dim); }
 .pp-reason b { font-family: var(--font-mono); font-weight: var(--fw-semibold); }
+/* ⭐ U26b putaran 2: evolusi skor + disclaimer di panel/sheet saat tabel sempit (PairPanel `LintasanSkor`) */
+.pp-traj { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-5); }
+.pp-traj-sum { display: flex; align-items: center; gap: var(--sp-4); margin: 0; font-size: var(--fs-base); color: var(--mute); }
+.pp-traj-sum .tt-spark { flex-shrink: 0; }
+.pp-traj-sum strong { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.pp-traj-sum .is-up { color: var(--up); }
+.pp-traj-sum .is-down { color: var(--down-strong); }
 
 .pp-window { margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: 1px dashed var(--line); }
 .pp-window-note { margin: 0; font-size: var(--fs-sm); line-height: var(--lh-loose); color: var(--mute); }

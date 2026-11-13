@@ -135,6 +135,26 @@ export function gayakanKanvas(c: PunyaGaya, ekstra?: DeepPartial<Styles>): void 
   if (ekstra) c.setStyles(ekstra)
 }
 
+/**
+ * ⭐ U7 (audit 7 Nov): chart yang BERHENTI di akhir data kurva (token lulus: candle hanya trade kurva). Penanda harga
+ * terakhir bawaan (garis putus + label sumbu-y berwarna naik/turun, tampak lime) terbaca sbg harga KINI, padahal
+ * kepala & kartu harga menulis harga pasar pasca-lulus (audit: $0.0₄3679 di chart vs $0.0001102 di kepala, ±3×).
+ * Penanda dibuat NETRAL (warna batang CURVE SOL `--line-strong`, teks `--ink`); strip OHLC menulis "end of curve data"
+ * alih-alih "latest" (`StripOhlc` `akhir`). Data candle tak berubah.
+ */
+export function gayaHargaAkhirKurva(): DeepPartial<Styles> {
+  const g = getComputedStyle(document.documentElement)
+  const netral = token(g, '--line-strong', '#5f594a')
+  const tinta = token(g, '--ink', '#f4f2ec')
+  return {
+    candle: {
+      priceMark: {
+        last: { upColor: netral, downColor: netral, noChangeColor: netral, text: { color: tinta } },
+      },
+    },
+  } as DeepPartial<Styles>
+}
+
 /** Gaya ulang setelah webfont siap (ukuran sumbu-y dihitung dari lebar teks). */
 export function setelahFontSiap(f: () => void): void {
   const fonts = (document as Document & { fonts?: FontFaceSet }).fonts

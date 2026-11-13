@@ -38,6 +38,19 @@ export function likuiditasUsd(liqSol: number | null | undefined, kurs: number): 
   return v > 0 ? v : null
 }
 
+/* ⭐ U22 (audit 7 Nov): likuiditas SOL = `liquidity_sol` × kurs = SISI SOL SAJA (dicek synt-dash api.rs `token`/`trenches`
+   + amm.rs): pair di kurva → `real_sol` (SOL di bonding curve, synt-stream/`v10_flow`); pair lulus → `liquidity.quote`
+   pair DexScreener ber-quote SOL yang memegang SOL terbanyak (`amm.rs lebih_baik`). Token di kurva/pool tak dihitung,
+   jadi angka `liquidity.usd` DexScreener (dua sisi) & pool RugCheck lebih besar. Angka TIDAK diubah, hanya label &
+   penjelas sumbernya (padanan BNB: "Curve funds (one side)"). */
+export const LABEL_LIKUIDITAS_SOL = 'Liquidity (SOL side)'
+
+export function infoLikuiditasSol(lulus: boolean): string {
+  return lulus
+    ? 'SOL in the pool, in USD, from DexScreener (the SOL pool holding the most SOL). One side only: the tokens in the pool are not counted. DexScreener’s own liquidity figure counts both sides, so it is higher.'
+    : 'SOL held in the pump.fun bonding curve, in USD. One side only: the tokens on the curve are not counted.'
+}
+
 /** Data kurva mesin masih mengikuti pair (bukan beku di akhir jendela ukur). */
 export function mesinSegar(ageSecs: number, windowSecs: number): boolean {
   return ageSecs - windowSecs < 120
@@ -126,5 +139,25 @@ export function pasarPascaLulusBelumDimuat(a: {
 }
 
 export const LABEL_PASAR_BELUM = 'Post-graduation market not loaded'
+
+/**
+ * ⭐ U16 (audit 7 Nov): `change_pct` (synt-dash api.rs) = harga kini / `harga_awal` − 1, dgn `harga_awal` = `price_usd`
+ * baris `v10_flow` PERTAMA (sec terkecil) dan syarat `harga_awal > 0`. Perekam synt-v10 (`recorder.rs`) menulis harga
+ * yang belum terbaca sbg 0 (`px.unwrap_or(0.0)`), bukan NULL, dgn `INSERT … ON CONFLICT (mint, sec) DO NOTHING` dan
+ * `sample_secs` menaik → baris pertama tak pernah ditimpa. Baris pertama berharga 0 = persen null SELAMANYA, berapa pun
+ * umur pair (bukan soal umur lewat jendela). 8 Nov 03.20 UTC null di 1/4 new, 27/50 trending, 10/31 bonding, 8/25
+ * graduated, semuanya BERHARGA; bukan khas token lulus.
+ *
+ * U16h (Reviewer 8 Nov): kelas ini hanya pasti bila pair SUDAH punya baris `v10_flow` (`adaBarisFlow`):
+ *   · `/api/token`: `window_secs` = `sec` baris `v10_flow` TERAKHIR (bukan panjang jendela), 0 bila belum ada baris
+ *     (±1 dtk pertama pair) → pemanggil mengirim `window_secs > 0`;
+ *   · `/api/trenches`: SETIAP item dibangun dari `v10_flow` (CTE `akhir … FROM v10_flow`) → selalu true.
+ * Harga null/0 = belum terukur (bisa terisi), bukan kelas ini.
+ */
+export function sejakLaunchTakTercatat(a: { change_pct?: number | null; price_usd?: number | null }, adaBarisFlow: boolean): boolean {
+  return adaBarisFlow && a.change_pct == null && typeof a.price_usd === 'number' && a.price_usd > 0
+}
+export const SEBAB_SEJAK_TAK_TERCATAT =
+  'The engine recorded no first price for this pair, so its change since launch cannot be computed and will stay empty.'
 export const JUDUL_PASAR_BELUM =
   'synt has not loaded the post-graduation price for this pair. The price, market cap and other market figures it would show are graduation figures, so they are hidden.'

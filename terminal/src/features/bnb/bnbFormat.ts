@@ -197,6 +197,32 @@ export function persenBase(p: number | null | undefined): string {
   return `${p.toFixed(1)}%`
 }
 
+/**
+ * U2 (audit 7 Nov): kurs quote → USD sbg teks ("1 SPCXB = $134.56"), atau null bila tak diketahui. SATU sumber utk
+ * catatan chart & keterangan Quote di kartu: dulu chart menulis "USD rate … is unknown" padahal API mengirim
+ * `quote_usd` dan kartu di sebelahnya sudah ber-USD.
+ */
+export function teksKurs(unit: string | null, kursUsd: number | null | undefined): string | null {
+  if (!unit || unit === 'USD' || kursUsd == null || !Number.isFinite(kursUsd) || kursUsd <= 0) return null
+  // kurs ≥ $1 selalu dua desimal ("$4.90", bukan "$4.9"); di bawahnya aturan harga biasa (nol subskrip)
+  const teks = kursUsd >= 1 ? `$${kursUsd.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : harga(kursUsd)
+  return `1 ${unit} = ${teks}`
+}
+
+/**
+ * U2: kalimat satuan di catatan chart BNB. Candle pair ber-quote selain BNB/stablecoin tetap dalam satuan quote
+ * (bnb.rs tak mengonversinya); kurs `quote_usd` hanya dipakai utk angka USD kartu → ditulis apa adanya. "Unknown"
+ * hanya bila kurs memang tak ada. Satuan USD → kalimat kosong.
+ */
+export function kalimatSatuanChart(unit: string | null, kursUsd: number | null | undefined): string {
+  if (!unit) return 'Price unit not reported.'
+  if (unit === 'USD') return ''
+  const kurs = teksKurs(unit, kursUsd)
+  return kurs
+    ? `Prices stay in ${unit}, not converted to USD. USD values on this page use ${kurs}.`
+    : `The USD rate of ${unit} is unknown, so prices stay in ${unit}.`
+}
+
 /* A2: teks pendek base rate sel tabel ("4.6% rug") kini dirakit `modelSkorBnb` (BnbParts) utk `ScoreCell` bersama. */
 
 /**

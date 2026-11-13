@@ -23,6 +23,7 @@ mod api;
 mod batas;
 mod bnb;
 mod dagang;
+mod dukungan;
 mod kotak;
 mod pemantau;
 mod profil;
@@ -71,6 +72,28 @@ async fn main() -> anyhow::Result<()> {
         let n = kotak::umumkan(&pool, judul, isi, arg.get(3).map(String::as_str)).await?;
         println!("pesan sistem terkirim ke {n} pengguna");
         return Ok(());
+    }
+
+    // Tiket support (4 Nov): `synt-akun tiket [n]` · `synt-akun balas <id> "<isi>"` · `synt-akun tiket-selesai <id>`.
+    // Jalankan lewat `ops/balas.sh` (butuh .env dari folder repo).
+    match arg.first().map(String::as_str) {
+        Some("tiket") => {
+            let n = arg.get(1).map(|x| x.parse()).transpose()?.unwrap_or(20);
+            return dukungan::daftar(&pool, n).await;
+        }
+        Some("balas") => {
+            let (Some(id), Some(isi)) = (arg.get(1), arg.get(2)) else {
+                anyhow::bail!("pakai: synt-akun balas <id> \"<isi>\"");
+            };
+            dukungan::balas(&pool, id.trim_start_matches('#').parse()?, isi).await?;
+            println!("balasan terkirim ke Messages pemilik tiket {id}");
+            return Ok(());
+        }
+        Some("tiket-selesai") => {
+            let Some(id) = arg.get(1) else { anyhow::bail!("pakai: synt-akun tiket-selesai <id>") };
+            return dukungan::selesai(&pool, id.trim_start_matches('#').parse()?).await;
+        }
+        _ => {}
     }
 
     // `synt-akun uji-dagang <wallet> <mint> buy|sell <jumlah mentah | habis>` — rakit + simulasi ke mainnet,
@@ -162,6 +185,12 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
+    let tg_dukungan = dukungan::Telegram::dari_env()?;
+    if tg_dukungan.is_none() {
+        warn!("⚠️ AKUN_SUPPORT_TG_* kosong — tiket support tersimpan tapi TAK diteruskan ke Telegram");
+    }
+    tokio::spawn(dukungan::jalan(pool.clone(), tg_dukungan.clone()));
+
     let menit = Duration::from_secs(60);
     let state = api::AppState {
         pool,
@@ -174,6 +203,10 @@ async fn main() -> anyhow::Result<()> {
         rem_simpan: Arc::new(batas::Rem::baru(120, menit)),
         rem_dagang: Arc::new(batas::Rem::baru(60, menit)),
         rem_baca_dagang: Arc::new(batas::Rem::baru(120, menit)),
+        // tiket: 3 per 10 menit per IP + plafon 60/jam seluruh layanan (rem per-IP bisa diakali rotasi alamat)
+        rem_tiket: Arc::new(batas::Rem::baru(3, 10 * menit)),
+        rem_tiket_global: Arc::new(batas::Rem::baru(60, 60 * menit)),
+        tg_dukungan,
         dagang,
         bnb,
     };
@@ -204,6 +237,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/akun/dagang/bnb/saldo", get(bnb::saldo))
         .route("/api/akun/dagang/bnb/posisi", get(bnb::posisi))
         .route("/api/akun/dagang/:id", get(dagang::status))
+        // tiket support (4 Nov): tamu boleh, wajib kontak
+        .route("/api/akun/dukungan", post(dukungan::kirim))
         // badan terbesar yang sah = gabung watchlist 200 token × ±50 byte
         .layer(DefaultBodyLimit::max(16 * 1024))
         .with_state(state);

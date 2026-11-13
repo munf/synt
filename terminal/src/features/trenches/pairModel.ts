@@ -4,7 +4,7 @@ import { nadaDariBase } from '@/components/ScoreCell'
 import { harga, umur } from '@/lib/format'
 import { adaptTrench } from './adapt'
 import type { RiskFactor, TrenchRow } from './types'
-import { JUDUL_PASAR_BELUM, LABEL_PASAR_BELUM, menitJendela, mesinSegar } from '@/features/token/labels'
+import { JUDUL_PASAR_BELUM, LABEL_PASAR_BELUM, SEBAB_SEJAK_TAK_TERCATAT, infoLikuiditasSol, menitJendela, mesinSegar, sejakLaunchTakTercatat } from '@/features/token/labels'
 import {
   DETIK_OUTCOME_MAKS,
   DETIK_SKOR,
@@ -32,6 +32,8 @@ export type Chain = 'sol' | 'bnb'
 export interface Num {
   v: number | null
   why?: string
+  /** U22: sumber/arti nilai yang ADA (popover ketuk di panel), mis. likuiditas SOL = sisi SOL saja. */
+  info?: string
 }
 
 export type NadaTag = 'warn' | 'neutral'
@@ -97,6 +99,9 @@ export interface PairModel {
   launchpad: string | null
   /** Tag baris-2 identitas (urut: peringatan → quote non-BNB → pajak → launchpad). SOL: hanya label P2. */
   tags: Tag[]
+  /** T1: tag yang ikut tampil di BARIS tabel (BNB: peringatan + quote non-BNB; pajak biasa & launchpad hanya di
+      panel, spt baris SOL yang hanya membawa alamat). Tanpa field ini = `tags`. */
+  rowTags?: Tag[]
   ageSecs: number | null
   price: Num & { text: string }
   /** "Price as of 2h 10m ago" (BNB) bila harga lama. */
@@ -124,10 +129,14 @@ export interface PairModel {
   reasonsFull: Reason[]
   /** BNB outcome 90 mnt; null = tak ditampilkan. */
   status: PairStatus | null
+  /** T1: sebab "—" di slot outcome (BNB) bila `status` null. */
+  statusWhy?: string
   /** SOL Trending: lintasan skor. */
   trend: PairStatus | null
   /** SOL Graduated: retensi harga 0-100. */
   retention: Num
+  /** T1: perubahan harga SEJAK LAUNCH (%) utk kolom MOVE. SOL = `change`; BNB tak punya harga awal → null + sebab. */
+  move: Num
   /** Catatan quote BNB ("Quoted in BNCB. …"). */
   quoteNote: string | null
   /** SOL: bisa dibeli lewat Quick buy (contoh). */
@@ -281,9 +290,15 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
       why: beku ? JUDUL_PASAR_BELUM : 'The engine has no price for this pair yet.',
     },
     priceStale: null,
-    change: { v: r.marketCapChange, label: 'since launch', why: beku ? JUDUL_PASAR_BELUM : 'Not measured yet.' },
+    // U16: persen null permanen (harga pertama mesin tak tercatat) → sebabnya di popover "—" kolom MC
+    change: {
+      v: r.marketCapChange,
+      label: 'since launch',
+      // U16h: item feed SELALU punya baris v10_flow (labels.ts) → tak lagi bergantung `window_secs` baris terpilih
+      why: beku ? JUDUL_PASAR_BELUM : sejakLaunchTakTercatat(it, true) ? SEBAB_SEJAK_TAK_TERCATAT : 'Not measured yet.',
+    },
     mcap: { v: r.marketCap, why: beku ? JUDUL_PASAR_BELUM : 'The engine has no market cap for this pair yet.' },
-    liq: { v: r.liquidity, why: beku ? JUDUL_PASAR_BELUM : 'The engine did not report liquidity for this pair.' },
+    liq: { v: r.liquidity, why: beku ? JUDUL_PASAR_BELUM : 'The engine did not report liquidity for this pair.', info: infoLikuiditasSol(lulus) },
     curveFunds: null,
     buys: it.buys,
     sells: it.sells,
@@ -307,6 +322,7 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     status: null,
     trend: it.trend ? TREND[it.trend] ?? null : null,
     retention: { v: r.priceRetention ?? null, why: beku ? JUDUL_PASAR_BELUM : 'Not measured yet.' },
+    move: { v: r.marketCapChange, why: beku ? JUDUL_PASAR_BELUM : 'Not measured yet.' },
     quoteNote: null,
     buy: true,
     explanation: (d?.explanation ?? it.explanation ?? null) || null,
@@ -407,6 +423,8 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
   tags.push({ label: LAUNCHPAD[it.launchpad] ?? it.launchpad, tone: 'neutral' })
   // peringatan dulu (urutan stabil): Creator-filled, Name reused, Tax ≥ 5% → lalu quote, pajak biasa, launchpad
   tags.sort((a, b) => (a.tone === 'warn' ? 0 : 1) - (b.tone === 'warn' ? 0 : 1))
+  // T1 (pemilik 7 Nov): baris BNB = baris SOL → hanya peringatan & quote non-BNB (tanpa Buy, USD bisa kosong)
+  const rowTags = tags.filter((t) => t.tone === 'warn' || t.label === q)
 
   /* Skor + base rate dari baris kalibrasi skor yang sama */
   const k = keadaanSkor(it)
@@ -500,6 +518,7 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
     explorer: { name: 'BscScan', url: `https://bscscan.com/token/${it.token}` },
     launchpad: LAUNCHPAD[it.launchpad] ?? it.launchpad,
     tags,
+    rowTags,
     ageSecs: Number.isFinite(it.age_secs) ? it.age_secs : null,
     price: { v: pUsd ?? pQ, text: priceText, why },
     priceStale: hargaBasi(it),
@@ -530,8 +549,14 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
         : 'No reasons were returned with this score.',
     reasonsFull,
     status,
+    statusWhy:
+      Number.isFinite(it.age_secs) && it.age_secs < DETIK_OUTCOME_MAKS
+        ? 'No outcome yet. It is labelled shortly after the 90 minute window that starts at minute 2 closes.'
+        : 'No 90 minute outcome was recorded for this pair.',
     trend: null,
-    retention: { v: null },
+    // T1: feed BNB belum membawa harga awal (`harga_awal` ada di engine, usulan B13) maupun retensi → tak ada kolomnya
+    retention: { v: null, why: 'The BNB feed does not report price retention yet.' },
+    move: { v: null, why: 'The BNB feed does not report the launch price yet, so the move since launch is not shown.' },
     quoteNote:
       pUsd === null && pQ !== null
         ? `Quoted in ${q}. Its USD rate is unknown, so price is shown in ${q} and USD values are left blank.`

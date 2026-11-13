@@ -91,7 +91,18 @@ export const akunApi = {
   ikuti: (handle: string) => minta<void>('PUT', `/ikuti/${encodeURIComponent(handle)}`),
   berhentiIkuti: (handle: string) => minta<void>('DELETE', `/ikuti/${encodeURIComponent(handle)}`),
   profil: (handle: string) => minta<AkunProfil>('GET', `/profil/${encodeURIComponent(handle)}`),
+  /** tiket support (4 Nov); tamu wajib `contact` */
+  dukungan: (t: {
+    category: TopikDukungan
+    message: string
+    contact?: string
+    context: Partial<Record<string, string>>
+    includeWallet: boolean
+    website: string
+  }) => minta<{ id: number; replyIn: 'messages' | 'contact' }>('POST', '/dukungan', t),
 }
+
+export type TopikDukungan = 'trading' | 'account' | 'scores' | 'bug' | 'other'
 
 // ── wallet ──────────────────────────────────────────────────────────────────
 //

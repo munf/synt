@@ -163,9 +163,46 @@ export function useBnbToken(addr: string): BnbSumber<BnbTokenDetail> {
   return s
 }
 
-/** Kalibrasi berubah paling cepat tiap hitung ulang server → 5 mnt cukup. */
+/* ⭐ U12 (audit 7 Nov): `/api/bnb/calibration` dulu diminta 3× saat mount (DevNotice, BnbEngineBar, Trenches/halaman
+   token BNB: tiap pemakai hook punya polling sendiri). Kini SATU permintaan bersama di tingkat modul: permintaan yang
+   masih terbang, atau yang selesai < KAL_BERSAMA_MS lalu, dipakai ulang oleh semua pemakai. Polling 300 dtk tiap
+   pemakai tetap; karena jawaban bersama selesai bersamaan, tik berikutnya juga jatuh bersamaan → tetap satu permintaan.
+   Galat tidak disimpan (tik berikutnya bertanya lagi). Pembatalan per pemakai (unmount) TIDAK membatalkan permintaan
+   bersama; hanya penantian pemakai itu yang berhenti. */
+const KAL_BERSAMA_MS = 30_000
+let kalBersama: { p: Promise<BnbCalibrationResponse>; selesai: number | null; gagal: boolean } | null = null
+
+function ambilKalibrasiBersama(signal: AbortSignal): Promise<BnbCalibrationResponse> {
+  const k = kalBersama
+  const pakaiUlang = k && !k.gagal && (k.selesai === null || Date.now() - k.selesai < KAL_BERSAMA_MS)
+  if (!pakaiUlang) {
+    const baru: NonNullable<typeof kalBersama> = { p: api.bnbCalibration(), selesai: null, gagal: false }
+    baru.p.then(
+      () => { baru.selesai = Date.now() },
+      () => { baru.gagal = true },
+    )
+    kalBersama = baru
+  }
+  return denganSinyal(kalBersama!.p, signal)
+}
+
+/** Janji bersama dgn pembatalan milik satu pemakai: abort → pemakai ini menerima AbortError, janji bersama jalan terus. */
+function denganSinyal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
+  const batalErr = () => new DOMException('Aborted', 'AbortError')
+  if (signal.aborted) return Promise.reject(batalErr())
+  return new Promise<T>((res, rej) => {
+    const batal = () => rej(batalErr())
+    signal.addEventListener('abort', batal, { once: true })
+    p.then(
+      (v) => { signal.removeEventListener('abort', batal); res(v) },
+      (e) => { signal.removeEventListener('abort', batal); rej(e) },
+    )
+  })
+}
+
+/** Kalibrasi berubah paling cepat tiap hitung ulang server → 5 mnt cukup. U12: satu permintaan bersama utk semua pemakai. */
 export function useBnbCalibration(): BnbSumber<BnbCalibrationResponse> {
-  return useSumber((s) => api.bnbCalibration(s), 300_000, 'calibration', TEMPLATE ? contohKalibrasi : null)
+  return useSumber(ambilKalibrasiBersama, 300_000, 'calibration', TEMPLATE ? contohKalibrasi : null)
 }
 
 /** Alamat kontrak BSC/EVM: 0x + 40 hex. Selain ini tak pernah dikirim ke synt-dash. */

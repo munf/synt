@@ -174,6 +174,16 @@
   white-space: nowrap;
 }
 
+/* U4: label fakta menit-2 BNB (label Token facts) terlipat dua baris agar strip tak melebar; strip yang memuatnya
+   menyejajarkan angka di dasar tile (tile lain sebaris ikut setinggi tile terlipat). Strip SOL tak terpengaruh. */
+.cd-metric.is-lipat dt { max-width: 19ch; }
+.cd-metrics:has(.is-lipat) .cd-metric { justify-content: space-between; }
+
+/* U17 (audit 7 Nov): satu metrik satu tempat di atas lipatan. Tile Harga (dan tile Δ utama bila kartu harga menampilkan
+   Δ yang sama) hilang saat kartu harga berdiri di samping chart (> 1080, kolom kanan teratas). ≤ 1080 kartu harga
+   jauh di bawah → keduanya tetap di kepala. */
+@media (min-width: 1081px) { .cd-head .is-sampai-1080 { display: none; } }
+
 .cd .is-empty { color: var(--mute-2); }
 .cd .ip-trigger { font: inherit; color: inherit; }
 
@@ -208,7 +218,9 @@
 .cd-chart { --ck-strip-h: 30px; --cd-chart-h: clamp(360px, 52vh, 620px); }
 .cd-chart .pcp { height: var(--cd-chart-h); }
 .cd-chart .pcp-empty { height: calc(var(--cd-chart-h) - 38px); }
-.cd-chart .ck-skel { height: var(--cd-chart-h); }
+/* U21: chart SOL & BNB selalu disusul catatan `.pcp-note` (margin --sp-2 + satu baris 11px) di bawah kanvas → skeleton
+   ikut setinggi itu; dulu isi kartu turun 23 px saat potongan chart tiba (catatan & strip timeframe di bawahnya bergeser) */
+.cd-chart .ck-skel { height: calc(var(--cd-chart-h) + var(--sp-2) + var(--fs-sm) * var(--lh-base)); }
 
 /* P2: harga pasca-lulus belum dimuat synt */
 .cd-chart-note {
@@ -747,6 +759,8 @@
 .cd-mc-grid { display: grid; grid-template-columns: 1fr 1fr; }
 
 .cd-stat { display: grid; align-content: start; gap: 3px; padding: var(--sp-3) var(--sp-5); min-width: 0; }
+/* U17: grid kini 1 sel (SOL: Curve) atau 3 sel (BNB) → sel ganjil terakhir selebar kartu, nilai tak terlipat */
+.cd-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .cd-stat-label {
   font-family: var(--font-mono);
@@ -944,6 +958,8 @@
   color: var(--warn);
 }
 .cd > .cd-nomarket-note { margin: 0; }
+/* U25(c): tautan dlm catatan ("View it on DexScreener", halaman Not tracked) terbaca sbg tautan */
+.cd-sample-note a { text-decoration: underline; text-underline-offset: 2px; }
 /* halaman contoh (Coin.tsx CoinTemplate): catatan di atas `.cd`, jarak = celah antar-kartu */
 .page > .cd-sample-note { margin-bottom: var(--sp-5); }
 .cd .tv-stale { margin: 0; padding: 0 var(--sp-1); }
@@ -975,6 +991,13 @@
 .sk-num { width: 140px; height: 28px; margin-bottom: var(--sp-4); }
 .sk-m { height: 14px; margin-top: var(--sp-3); }
 .tv-skel-card { padding: var(--sp-5); }
+/* ⭐ U21: kerangka setinggi kepala NYATA (diukur 8 Nov: tile 58 = label satu baris + nilai, identitas 49; di ≤ 720 nama +
+   baris ikon 91) → chart di bawahnya tak turun 6-80 px saat data tiba. Juga dipakai kerangka statis index.html. */
+.tv-skel .sk-cell { height: 58px; }
+.tv-skel .cd-identity { min-height: 49px; }
+@media (max-width: 720px) {
+  .tv-skel .cd-identity { min-height: 91px; align-items: flex-start; }
+}
 .tv-tab-skel { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-5); }
 .tv-tab-skel .sk { height: 20px; }
 .cd .tv-tab-stale { margin: 0 var(--sp-5) var(--sp-4); }

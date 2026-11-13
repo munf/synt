@@ -20,7 +20,7 @@ const BLOK_BASI_DETIK = 120
 /**
  * ⭐ A3 (DESIGN §3.1): footer engine SADAR CHAIN — dipakai saat Trenches berchain BNB / halaman `/bnb/*`.
  * Bentuk & gaya = `EngineBar` Solana (kelas `eb-*`, Metric `inline`), isinya statistik engine BNB:
- * Born/h, Scored/h, Graduated 24h, versi kalibrasi (+ provisional). Tanpa data → "—", tanpa klaim "live".
+ * Detected/h (U24, dulu "Born"), Scored/h, Graduated 24h, versi kalibrasi (+ provisional). Tanpa data → "—", tanpa klaim "live".
  * Tak bisa dibuka (Solana punya panel rincian per komponen; BNB belum punya datanya).
  */
 export function BnbEngineBar() {
@@ -42,15 +42,20 @@ export function BnbEngineBar() {
     <footer className="eb">
       <div className="eb-bar is-static">
         <span className="eb-items">
-          <Metric as="span" variant="inline" className="eb-metric" label="Born" value={n(data?.launches_per_hour, (x) => `${x.toLocaleString('en-US')}/h`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Scored" value={n(data?.scored_per_hour, (x) => `${x}/h`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Graduated" value={n(data?.graduations_24h, (x) => `${x} in 24h`)} />
+          {/* U24: "Born" → "Detected" (kosakata & slot pertama = footer Solana); penjelas lewat `title` (bnb.rs `overview`) */}
+          <Metric as="span" variant="inline" className="eb-metric" label="Detected" value={n(data?.launches_per_hour, (x) => `${x.toLocaleString('en-US')}/h`)}
+            title="New BNB Chain launches (Flap and four.meme) the engine saw in the last hour." />
+          <Metric as="span" variant="inline" className="eb-metric" label="Scored" value={n(data?.scored_per_hour, (x) => `${x}/h`)}
+            title="Launches scored in the last hour. A launch is scored at minute 2 if at least 10 outside wallets bought in its first 2 minutes." />
+          <Metric as="span" variant="inline" className="eb-metric" label="Graduated" value={n(data?.graduations_24h, (x) => `${x} in 24h`)}
+            title="Launches that graduated from the bonding curve in the last 24 hours." />
           <Metric
             as="span"
             variant="inline"
             className="eb-metric"
             label="Calibration"
             value={data?.score_version ? `${data.score_version}${prov ? ' · provisional' : ''}` : '—'}
+            title={prov ? 'Version of the BNB score calibration. Provisional: the table behind the scores is still being measured.' : 'Version of the BNB score calibration.'}
           />
         </span>
         <span className={`eb-status ${kelas}`} role="status">

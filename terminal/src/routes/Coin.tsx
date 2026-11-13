@@ -11,6 +11,11 @@ import { mockTrenches } from '@/features/trenches/mock'
 import { mockPositions, mockTrades } from '@/features/wallet/mock'
 import { TEMPLATE } from '@/lib/template'
 import { TokenSkeleton } from '@/features/token/view/TokenView'
+import { muatChartSol, pramuat } from '@/features/token/chart/muat'
+import { aliranMungkinHidup } from '@/features/token/aliran'
+
+// U1 putaran 2: potongan chart (±108 KB gzip) mulai diunduh begitu modul rute ini dievaluasi, paralel dgn /api/token
+pramuat(muatChartSol)
 
 /**
  * Detail per-coin — `/coin/:mint`.
@@ -70,6 +75,31 @@ function CoinTemplate() {
   )
 }
 
+/**
+ * ⭐ U11 (audit 7 Nov): interval `/api/token` ADAPTIF. Dulu tetap 5 dtk seumur halaman (13 permintaan/menit) walau
+ * skor sudah final & token sudah lulus. Isi yang tampil tak berubah, hanya seberapa sering ditanya:
+ *
+ * | keadaan (dari jawaban terakhir) | interval | alasan |
+ * |---|---|---|
+ * | belum ada jawaban / jendela skor berjalan (`age_secs` < jendela 600 dtk + 120) | 5 dtk | skor, deret skor & jendela ukur masih bergerak (snapshot tiap 60 dtk s/d detik-600, `mesinSegar` memakai +120 yg sama) |
+ * | kurva, aliran mungkin hidup (`aliranMungkinHidup`: belum lulus & < 24 jam) | 5 dtk | harga/MC/"since launch"/likuiditas kepala = harga synt-stream terkini di synt-dash, sementara chart bergerak lewat SSE (syarat SSE yang SAMA, `aliran.ts`) |
+ * | lulus (`complete`) | 30 dtk | harga pasca-lulus = cache DexScreener synt-dash (segar 20 dtk); pair P2 bahkan beku |
+ * | kurva ≥ 24 jam | 60 dtk | synt-stream tak lagi menyiarkan pair ini → angka kepala beku (nilai flow terakhir) |
+ *
+ * ⛔ Putaran 1 (Reviewer PERBAIKI): kurva berskor final dipoll 30 dtk → kepala tertinggal dari chart SSE (selisih
+ * 11-17% vs ≤ 8,6% di master). Jeda panjang kini HANYA utk pair yang chart-nya juga diam.
+ * Tab tersembunyi → polling berhenti, tampil lagi → langsung meminta (usePolling, pola yang sama dgn U5 Trenches).
+ * `window_secs` = detik flow terakhir (≤ 600), jadi batasnya memakai max(window_secs, 600).
+ */
+const JENDELA_SKOR_S = 600
+function intervalToken(d: { age_secs?: number; window_secs?: number; complete?: boolean | null } | null): number {
+  if (!d || typeof d.age_secs !== 'number') return 5_000
+  if (d.age_secs < Math.max(d.window_secs ?? 0, JENDELA_SKOR_S) + 120) return 5_000
+  const lulus = d.complete === true
+  if (aliranMungkinHidup(d.age_secs, lulus)) return 5_000
+  return lulus ? 30_000 : 60_000
+}
+
 function CoinNyata() {
   const { mint } = useParams<{ mint: string }>()
   const m = mint ?? ''
@@ -96,7 +126,7 @@ function CoinNyata() {
       if (e instanceof ApiError && e.status === 404) tak404.current = e
       throw e
     }
-  }, 5_000, m)
+  }, intervalToken, m)
   // ⛔⛔ PANGGILAN GANDA DICABUT 2026-09-24.
   //
   // `api.chart(mint)` dipanggil DUA KALI untuk mint yang sama: di sini tiap
@@ -137,7 +167,9 @@ function CoinNyata() {
 
   if (!coin) {
     // A5: kerangka kartu (bukan satu teks "Loading…")
-    if (tok.loading) return <section className="page"><TokenSkeleton /></section>
+    /* U21: jawaban sudah tiba tapi `coin` baru diisi effect sesudah render ini → tetap kerangka. Dulu jatuh ke
+       "Token not found." sesaat (terukur 300 ms di ponsel CPU 4x) sebelum halaman tampil. */
+    if (tok.loading || tok.data?.mint === m) return <section className="page"><TokenSkeleton /></section>
     // 404 dari mesin = mesin tak mengenal mint ini, bukan mesin mati
     // ⭐ 1c putaran 2: token nyata yang tak dikenal mesin (JUP) → keadaan "Not tracked by synt" + fakta eksternal;
     // alamat yang DexScreener pun tak kenal → "Token not found."

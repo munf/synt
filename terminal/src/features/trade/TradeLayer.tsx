@@ -1,6 +1,7 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { ASLI, dariMentah, jumlahRingkas, teksSol, toko, type Jalan, type Tinjauan } from './dagang'
 import { teksBnb, type KutipanBnb } from './dagangBnb'
+import { bukaDukungan } from '@/features/support/konteks'
 import './Trade.css'
 
 /**
@@ -48,6 +49,12 @@ function KartuJalan({ j }: { j: Jalan }) {
           <a href={ASLI[j.chain].tx(j.tanda)} target="_blank" rel="noreferrer">
             View on {ASLI[j.chain].penjelajah}
           </a>
+        )}
+        {/* 4 Nov: trade gagal → tiket support dgn trade ini terlampir (id, tanda, galat) */}
+        {j.tahap === 'gagal' && (
+          <button type="button" className="tr-toast-lapor" onClick={() => bukaDukungan(j.kunci)}>
+            Report a problem
+          </button>
         )}
       </div>
       {selesai && (

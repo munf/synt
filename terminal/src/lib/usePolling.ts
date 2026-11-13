@@ -24,7 +24,12 @@ export interface PollState<T> {
  */
 export function usePolling<T>(
   fetcher: (signal: AbortSignal) => Promise<T>,
-  intervalMs = 15_000,
+  /**
+   * Jeda antar-permintaan (ms). ⭐ U11 (audit 7 Nov): boleh FUNGSI dari data terakhir yang sukses (null = belum ada)
+   * → interval adaptif tanpa memulai ulang polling. Fungsi dibaca dari ref, identitasnya boleh baru tiap render;
+   * jeda baru berlaku mulai tik berikutnya (tak ada permintaan tambahan saat jeda berganti).
+   */
+  intervalMs: number | ((data: T | null) => number) = 15_000,
   /**
    * ⭐ Penanda sumber. Saat ia berubah, polling DIMULAI ULANG.
    *
@@ -49,17 +54,28 @@ export function usePolling<T>(
   // memicu ulang effect (dan menyalakan ulang interval).
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher
+  const intervalRef = useRef(intervalMs)
+  intervalRef.current = intervalMs
+  // angka → perubahan angka tetap memulai ulang polling (perilaku lama); fungsi → tak pernah memulai ulang
+  const intervalKunci = typeof intervalMs === 'number' ? intervalMs : 'fungsi'
 
   useEffect(() => {
     let alive = true
     let timer: ReturnType<typeof setTimeout> | undefined
     let controller: AbortController | undefined
+    // data sukses terakhir milik sumber INI (kunci) — dasar interval adaptif
+    let terakhir: T | null = null
+    const jeda = () => {
+      const iv = intervalRef.current
+      return typeof iv === 'function' ? iv(terakhir) : iv
+    }
 
     const tick = async () => {
       controller?.abort()
       controller = new AbortController()
       try {
         const data = await fetcherRef.current(controller.signal)
+        terakhir = data
         if (alive) setState({ data, error: null, loading: false, at: Date.now() })
       } catch (err) {
         if (!alive || (err as Error).name === 'AbortError') return
@@ -67,7 +83,7 @@ export function usePolling<T>(
         // mengosongkan layar yang sedang dibaca.
         setState((s) => ({ ...s, error: err as Error, loading: false }))
       } finally {
-        if (alive && !document.hidden) timer = setTimeout(tick, intervalMs)
+        if (alive && !document.hidden) timer = setTimeout(tick, jeda())
       }
     }
 
@@ -89,7 +105,7 @@ export function usePolling<T>(
       controller?.abort()
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [intervalMs, kunci])
+  }, [intervalKunci, kunci])
 
   return state
 }

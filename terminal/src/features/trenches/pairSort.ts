@@ -21,8 +21,10 @@ export const SORT_LABEL: Record<SortKey, string> = {
 }
 
 /** Kunci sortir per chain · tampilan: hanya kolom yang ada di set kolom penuh tampilan itu (PairTable `SET`). */
+// T1 (7 Nov): BNB memakai set kolom SOL → kunci sortir sama (BUYERS tak lagi punya kolom; angkanya di panel).
+// Putaran 2: BNB New tanpa kolom LIQ (semua pair di kurva) → tanpa sortir Liquidity.
 export function sortKeys(chain: Chain, view: string): SortKey[] {
-  if (chain === 'bnb') return view === 'graduated' ? ['score', 'age', 'mc', 'liq', 'buyers'] : ['score', 'age', 'mc', 'buyers']
+  if (chain === 'bnb' && view !== 'graduated') return ['score', 'age', 'mc']
   return ['score', 'age', 'mc', 'liq']
 }
 
@@ -94,8 +96,10 @@ export interface FilterDef {
 }
 
 export const FILTERS: FilterDef[] = [
-  // SOL & BNB: hanya baris yang punya angka skor (bukan Quiet / Scoring at 2m / Not scored yet)
-  { id: 'scored', label: 'Scored only', chains: ['sol', 'bnb'], test: (m) => m.score.kind === 'value' },
+  // BNB: hanya baris yang punya angka skor (bukan Quiet / Scoring at 2m / Not scored yet).
+  // U8 (audit 7 Nov): TIDAK di SOL — feed /api/trenches SOL hanya memuat pair berskor (0 baris tanpa skor di keempat
+  // tampilan), jadi chip itu kontrol mati. `?filter=scored` lama di SOL diabaikan `bacaFilter`.
+  { id: 'scored', label: 'Scored only', chains: ['bnb'], test: (m) => m.score.kind === 'value' },
   // BNB: pajak transfer ≤ 5% (500 bps). Pajak tak terukur (four.meme) TIDAK lolos: tak diketahui ≠ rendah.
   { id: 'tax5', label: 'Tax ≤ 5%', chains: ['bnb'], test: (m) => m.taxBps != null && m.taxBps <= 500 },
 ]

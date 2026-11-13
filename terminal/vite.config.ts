@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -88,7 +89,20 @@ const klinechartsProKurva = {
   },
 }
 
-export default defineConfig({
+// Versi build utk lampiran tiket support (4 Nov): commit pendek + penanda template. Salinan tanpa .git (repo publik
+// lewat `git archive`) jatuh ke "dev" alih-alih menggagalkan build.
+function versiBuild(mode: string): string {
+  let sha = 'dev'
+  try {
+    sha = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || 'dev'
+  } catch {
+    /* bukan checkout git */
+  }
+  return mode === 'template' ? `${sha}-lab` : sha
+}
+
+export default defineConfig(({ mode }) => ({
+  define: { __BUILD__: JSON.stringify(versiBuild(mode)) },
   plugins: [react(), klinechartsTanpaLipat, klinechartsProKurva],
   // P5 putaran 2: Pro tak di-pre-bundle supaya tambalan `klinecharts-pro-kurva` juga berlaku di dev
   optimizeDeps: { exclude: ['@klinecharts/pro'] },
@@ -126,5 +140,21 @@ export default defineConfig({
     // yang masuk, bukan apa yang mereka lihat setelah masuk.
     // Nyalakan sementara lewat: SOURCEMAP=1 npm run build
     sourcemap: process.env.SOURCEMAP === '1',
+    // U1 (audit 7 Nov): kode vendor dipisah supaya hash-nya tak ikut berubah tiap deploy kode aplikasi (cache browser).
+    // `react` = react/react-dom/scheduler/router, dimuat di setiap halaman. `chart` = klinecharts + Pro, HANYA dicapai
+    // lewat impor dinamis komponen chart (PriceChartLive/adaptBnb) → tak pernah ikut muat awal Trenches/Discovery.
+    // Tambalan `klinecharts-tanpa-lipat` & `klinecharts-pro-kurva` (transform per modul) tetap berlaku di potongan ini.
+    rollupOptions: {
+      output: {
+        // potongan bersama < 1 KB (template.ts, useWatchlist, …) digabung → lebih sedikit permintaan kecil. Putaran 2: dulu
+        // 10 KB → rute kecil (Leaderboard, Post, Inbox, Settings) ikut tergabung ke potongan entry; 1 KB menjaga semua rute malas
+        experimentalMinChunkSize: 1_000,
+        manualChunks(id: string) {
+          if (/node_modules[\\/](klinecharts|@klinecharts[\\/]pro)[\\/]/.test(id)) return 'chart'
+          if (/node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|@remix-run[\\/]router)[\\/]/.test(id)) return 'react'
+          return undefined
+        },
+      },
+    },
   },
-})
+}))

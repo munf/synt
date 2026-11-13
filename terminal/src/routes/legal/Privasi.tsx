@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { Kontak } from './bersama'
 
 /*
- * Kebijakan Privasi — isi EN & ID. Struktur & gaya mengikuti eel.synt.fun/privasi (synteel), satu perusahaan.
+ * Kebijakan Privasi — isi EN & ID. Struktur & gaya mengikuti eel.synt.fun/privasi (synteel).
+ * Pengelola = Muhammad Fajar Nugraha (perorangan) sejak 10 Nov; synt BUKAN milik PT Synt Tekno Multikarya (PT hanya synteel).
  * ⚠️ Tiap kalimat = janji yang harus cocok dgn sistem (lihat komentar di ../Legal.tsx). ⛔ Tanpa em dash.
  */
 
@@ -15,7 +16,8 @@ export function PrivasiEn() {
           <li>You can use the terminal without an account. synt does not ask who you are.</li>
           <li>
             If you sign in, synt keeps your wallet address, the profile you write, your watchlist, who you follow,
-            your alerts, your terminal settings and the trades you make on synt. Nothing else about you.
+            your alerts, your terminal settings and the trades you make on synt. Nothing else about you, apart from
+            support requests you choose to send.
           </li>
           <li>
             synt never sees your private key or seed phrase. Signing in never moves funds, and a trade moves funds
@@ -28,8 +30,8 @@ export function PrivasiEn() {
 
       <h2>1. Who manages the data</h2>
       <p>
-        PT Synt Tekno Multikarya (a sole-founder limited company, Indonesia) runs the synt terminal at synt.fun and its
-        subdomains. In this policy, &quot;synt&quot; means PT Synt Tekno Multikarya.
+        Muhammad Fajar Nugraha, an individual in Indonesia, runs the synt terminal at synt.fun and its subdomains. In
+        this policy, &quot;synt&quot; means Muhammad Fajar Nugraha.
       </p>
       <p>
         This policy follows Indonesian Law No. 27 of 2022 on Personal Data Protection (UU PDP) and is part of the synt{' '}
@@ -118,6 +120,15 @@ export function PrivasiEn() {
           </tbody>
         </table>
       </div>
+      <h3>Support requests</h3>
+      <p>
+        When you send a request from Help &amp; support, synt keeps the topic, your message and the contact you write
+        (required only when you are not signed in). The form also attaches, and shows you before sending: the page you
+        were on, the token on that page, your last trade on synt in that browser tab (its status, error and transaction
+        signature), your wallet address when you are signed in, the terminal version and your screen size. You can
+        remove any of these before sending. A request from a signed-in user is linked to the account so the reply can
+        arrive in Messages. Requests are forwarded to the synt team&apos;s private Telegram chat.
+      </p>
       <h3>Technical data</h3>
       <p>
         A sign-in cookie (<code>__Host-synt_sesi</code>, httpOnly, HTTPS only) that keeps you signed in. The server
@@ -174,6 +185,10 @@ export function PrivasiEn() {
           build a trade route for tokens that already trade on a DEX.
         </li>
         <li>
+          <strong>Telegram</strong>: carries support requests to the synt team&apos;s private chat, with the details
+          listed under Support requests.
+        </li>
+        <li>
           <strong>Authorities</strong>, when a valid legal request requires it.
         </li>
         <li>
@@ -197,13 +212,14 @@ export function PrivasiEn() {
         <li>Sign-in: 30 days. Signing out ends it.</li>
         <li>Sign-in messages: removed within 20 minutes.</li>
         <li>A handle you gave up: held for 30 days.</li>
+        <li>Support requests: 90 days, or until the account is deleted.</li>
         <li>Database backups: up to 35 days.</li>
       </ul>
 
       <h2>8. Deleting an account</h2>
       <p>
         In the terminal: My profile, then Edit profile, then Delete account, and confirm. synt deletes your profile,
-        watchlist, follows, alerts, settings, trade history and every sign-in session at once. Trades already on the
+        watchlist, follows, alerts, settings, trade history, support requests and every sign-in session at once. Trades already on the
         blockchain stay there, as every blockchain transaction does. Your handle is held for 30 days so that nobody else can
         take it right away. Deleted data disappears from the backups within 35 days at most. Signing in again later
         with the same wallet starts a new, empty account.
@@ -232,7 +248,7 @@ export function PrivasiEn() {
 
       <h2>13. Contact</h2>
       <p>
-        PT Synt Tekno Multikarya
+        Muhammad Fajar Nugraha
         <br />
         <Kontak baris />
       </p>
@@ -249,7 +265,8 @@ export function PrivasiId() {
           <li>Terminal bisa dipakai tanpa akun. synt tidak menanyakan siapa Anda.</li>
           <li>
             Bila Anda masuk, synt menyimpan alamat wallet, profil yang Anda tulis, watchlist, siapa yang Anda ikuti,
-            notifikasi, pengaturan terminal dan transaksi yang Anda lakukan di synt. Tidak ada data lain tentang Anda.
+            notifikasi, pengaturan terminal dan transaksi yang Anda lakukan di synt. Tidak ada data lain tentang Anda,
+            selain permintaan bantuan yang Anda kirim sendiri.
           </li>
           <li>
             synt tidak pernah melihat kunci privat atau seed phrase Anda. Masuk tidak pernah memindahkan dana, dan
@@ -262,8 +279,8 @@ export function PrivasiId() {
 
       <h2>1. Siapa yang mengelola data</h2>
       <p>
-        PT Synt Tekno Multikarya (perseroan perorangan, Indonesia) menjalankan terminal synt di synt.fun beserta
-        subdomainnya. Dalam kebijakan ini, &quot;synt&quot; berarti PT Synt Tekno Multikarya.
+        Muhammad Fajar Nugraha, perorangan di Indonesia, menjalankan terminal synt di synt.fun beserta subdomainnya.
+        Dalam kebijakan ini, &quot;synt&quot; berarti Muhammad Fajar Nugraha.
       </p>
       <p>
         Kebijakan ini mengikuti Undang-Undang Nomor 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP) dan menjadi
@@ -352,6 +369,15 @@ export function PrivasiId() {
           </tbody>
         </table>
       </div>
+      <h3>Permintaan bantuan</h3>
+      <p>
+        Saat Anda mengirim permintaan lewat Help &amp; support, synt menyimpan topik, pesan dan kontak yang Anda tulis
+        (wajib hanya bila Anda tidak masuk). Form juga melampirkan, dan menampilkannya sebelum dikirim: halaman yang
+        sedang dibuka, token di halaman itu, transaksi terakhir Anda di synt pada tab browser tersebut (status, galat dan
+        tanda tangan transaksinya), alamat wallet bila Anda masuk, versi terminal dan ukuran layar. Setiap lampiran bisa
+        dilepas sebelum dikirim. Permintaan dari pengguna yang masuk ditautkan ke akunnya supaya balasan sampai di
+        Messages. Permintaan diteruskan ke chat Telegram privat tim synt.
+      </p>
       <h3>Data teknis</h3>
       <p>
         Cookie masuk (<code>__Host-synt_sesi</code>, httpOnly, hanya lewat HTTPS) yang menjaga Anda tetap masuk. Server
@@ -408,6 +434,10 @@ export function PrivasiId() {
           rute transaksi bagi token yang sudah diperdagangkan di DEX.
         </li>
         <li>
+          <strong>Telegram</strong>: membawa permintaan bantuan ke chat privat tim synt, dengan rincian yang disebut di
+          bagian Permintaan bantuan.
+        </li>
+        <li>
           <strong>Aparat berwenang</strong>, bila ada permintaan hukum yang sah.
         </li>
         <li>
@@ -433,13 +463,15 @@ export function PrivasiId() {
         <li>Sesi masuk: 30 hari. Keluar mengakhirinya.</li>
         <li>Pesan masuk: dihapus dalam 20 menit.</li>
         <li>Handle yang Anda lepas: ditahan 30 hari.</li>
+        <li>Permintaan bantuan: 90 hari, atau sampai akun dihapus.</li>
         <li>Cadangan database: paling lama 35 hari.</li>
       </ul>
 
       <h2>8. Menghapus akun</h2>
       <p>
         Di terminal: My profile, lalu Edit profile, lalu Delete account, lalu konfirmasi. synt langsung menghapus
-        profil, watchlist, daftar yang diikuti, notifikasi, pengaturan, riwayat transaksi dan semua sesi masuk Anda.
+        profil, watchlist, daftar yang diikuti, notifikasi, pengaturan, riwayat transaksi, permintaan bantuan dan semua
+        sesi masuk Anda.
         Transaksi yang sudah ada di blockchain tetap di sana, seperti semua transaksi blockchain. Handle Anda ditahan 30 hari supaya tidak langsung
         diambil orang lain. Data yang dihapus hilang dari cadangan paling lama dalam 35 hari. Masuk lagi nanti dengan
         wallet yang sama akan membuat akun baru yang kosong.
@@ -471,7 +503,7 @@ export function PrivasiId() {
 
       <h2>13. Kontak</h2>
       <p>
-        PT Synt Tekno Multikarya
+        Muhammad Fajar Nugraha
         <br />
         <Kontak id baris />
       </p>

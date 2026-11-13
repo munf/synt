@@ -4,7 +4,7 @@ import { KLineChartPro, DefaultDatafeed } from '@klinecharts/pro'
 import type { SymbolInfo, Period, DatafeedSubscribeCallback } from '@klinecharts/pro'
 import { registerIndicator } from 'klinecharts'
 import type { Chart, KLineData } from 'klinecharts'
-import { gayakanKanvas, pasangLipatHarga, setelahFontSiap, zonaPembaca } from './chart/kanvas'
+import { gayaHargaAkhirKurva, gayakanKanvas, pasangLipatHarga, setelahFontSiap, zonaPembaca } from './chart/kanvas'
 import { CatatanBasi, ChartGagal, ChartSkeleton, StripOhlc, useCandleTerakhir, useCrosshair } from './chart/ChartBits'
 import '@klinecharts/pro/dist/klinecharts-pro.css'
 import type { CandleRow } from '@/api/types'
@@ -343,6 +343,7 @@ export function PriceChartPro({
   memuat = false,
   gagal = false,
   basiSejak,
+  akhirKurva = false,
 }: {
   mint: string
   symbol: string
@@ -360,6 +361,8 @@ export function PriceChartPro({
   gagal?: boolean
   /** Epoch ms jawaban candle sukses terakhir. */
   basiSejak?: number | null
+  /** U7: token lulus → chart berhenti di akhir data kurva; penanda harga terakhir netral & strip "end of curve data". */
+  akhirKurva?: boolean
 }) {
   const wadah = useRef<HTMLDivElement>(null)
   const chart = useRef<KLineChartPro | null>(null)
@@ -379,6 +382,9 @@ export function PriceChartPro({
   const langganRef = useRef(langganTik)
   langganRef.current = langganTik
   const feed = useRef<DatafeedLokal | null>(null)
+  // U7: dibaca tiap kali kanvas digayakan (termasuk setelah font siap) → penanda netral tak tertimpa warna naik/turun
+  const akhirRef = useRef(akhirKurva)
+  akhirRef.current = akhirKurva
   /** Instance klinecharts di balik Pro (strip OHLC) & wadah strip yang disisipkan di antara bilah Pro dan kanvas. */
   const [kc, setKc] = useState<Chart | null>(null)
   const [hostStrip, setHostStrip] = useState<HTMLDivElement | null>(null)
@@ -427,6 +433,9 @@ export function PriceChartPro({
       ],
       // P5: pane bawah = cadangan kurva berlabel jujur, bukan VOL bawaan Pro
       subIndicators: ['CURVE_SOL'],
+      /* 7 Nov (pemilik): logo bawaan Pro (kantong uang 160×184 di tengah kanvas) mengganggu candle → tanda synt kecil
+         di pojok kiri atas panel harga (posisi & ukuran di chart.css). */
+      watermark: '<svg class="logo" viewBox="0 0 344 592" aria-hidden="true"><path d="M196 0L256 60V244H344V396L148 592L88 532V348H0V196Z"/></svg>',
       datafeed: df as unknown as DefaultDatafeed,
       drawingBarVisible: !sempit,
     })
@@ -459,11 +468,13 @@ export function PriceChartPro({
       /* ≤760: legenda indikator (MA…, CURVE SOL) hanya saat crosshair aktif — selalu-tampil ia membungkus 2 baris dan
          menutupi candle teratas di layar sempit. Ikonnya (mata/gear/tutup) tetap terjangkau saat crosshair aktif;
          indikator juga tetap diatur dari menu Indicator. */
-      const gayakan = () =>
+      const gayakan = () => {
         gayakanKanvas(
           { getStyles: () => k.getStyles(), setStyles: (s) => c.setStyles(s) },
           sempit ? { indicator: { tooltip: { showRule: 'follow_cross' as never } } } : undefined,
         )
+        if (akhirRef.current) c.setStyles(gayaHargaAkhirKurva())
+      }
       gayakan()
       // strip OHLC di antara bilah periode Pro & kanvas (bukan di atas candle)
       bilah.after(host)
@@ -509,6 +520,12 @@ export function PriceChartPro({
     if (candles) feed.current?.perbarui(candles)
   }, [candles])
 
+  /* U7: pair yang lulus SAAT halaman terbuka → penanda harga terakhir ikut jadi netral tanpa membangun ulang chart.
+     (Arah sebaliknya tak terjadi: lulus tak pernah kembali ke kurva.) */
+  useEffect(() => {
+    if (akhirKurva && kc) chart.current?.setStyles(gayaHargaAkhirKurva())
+  }, [akhirKurva, kc])
+
   const hover = useCrosshair(kc, wadah.current)
   const terakhir = useCandleTerakhir(kc)
 
@@ -545,6 +562,7 @@ export function PriceChartPro({
             <StripOhlc
               k={hover ?? terakhir}
               hover={!!hover}
+              akhir={akhirKurva}
               satuan={mataUang === 'usd' ? 'USD' : 'SOL'}
               tz={kc?.getTimezone() || tz}
               ekstra={(k) => [{ label: 'SOL in curve', value: k.volume != null ? k.volume.toFixed(1) : '—' }]}

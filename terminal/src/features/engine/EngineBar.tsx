@@ -62,17 +62,21 @@ export function EngineBar({
                 value={compact(s.processedPerHour)}
                 note="tokens / hour"
                 label="Detected"
+                title={INFO_DETECTED}
               />
               <Metric variant="stat"
                 value={s.scoredPerHour.toFixed(1)}
                 note="tokens / hour"
-                label="AI-scored"
+                // U24: = `scored_per_hour` bar (audit penuh gate-2, bukan AI; synt-dash api.rs) → kata yang sama dgn bar
+                label="Scored"
                 tone="is-accent"
+                title={INFO_SCORED}
               />
               <Metric variant="stat"
                 value={`${s.selectivityPct.toFixed(2)}%`}
-                note="reach scoring"
+                note="pass screening"
                 label="Selectivity"
+                title={INFO_SELECTIVITY}
               />
             </div>
           </div>
@@ -94,20 +98,32 @@ export function EngineBar({
               </ul>
 
               <div className="eb-grid eb-grid-2">
-                <Metric variant="stat"
-                  value={`${s.errorRatePct.toFixed(1)}%`}
-                  note={`${s.errorsThisHour} rejected this hour`}
-                  label="Error rate"
-                />
+                {/* U24: dulu "Errors"/"Metadata" juga di bar; kini hanya di sini, berlabel apa yang diukur (synt-dash api.rs
+                    `overview`). B15 (synt-dash ce3eab0, 8 Nov): `cost.rpc_calls_this_hour` = getblock_rpc + shyft_rpc jam
+                    berjalan. 0 panggilan (mis. awal jam) → "—" + "No RPC calls recorded this hour", BUKAN "0.0%";
+                    `cost` tak dikirim (permintaan publik lewat Caddy membuang field internal) → tile dilepas.
+                    B16 (ce3eab0): `metadata_coverage_pct` hanya menghitung `v10_meta.diambil IS TRUE` → "found" akurat. */}
+                {s.rpcCallsThisHour !== null && (
+                  <Metric variant="stat"
+                    value={s.rpcCallsThisHour > 0 ? `${s.errorRatePct.toFixed(1)}%` : null}
+                    note={s.rpcCallsThisHour > 0
+                      ? `${s.errorsThisHour} of ${s.rpcCallsThisHour.toLocaleString('en-US')} ${s.rpcCallsThisHour === 1 ? 'call' : 'calls'} failed this hour`
+                      : 'No RPC calls recorded this hour'}
+                    label="RPC error rate"
+                    title={INFO_RPC}
+                  />
+                )}
                 <Metric variant="stat"
                   value={`${s.metadataCoveragePct.toFixed(0)}%`}
                   note="of scored tokens"
-                  label="Metadata"
+                  label="Metadata found"
+                  title={INFO_METADATA}
                 />
                 <Metric variant="stat"
                   value={compact(s.discovered)}
-                  note="this session"
+                  note="since this engine version"
                   label="Discovered"
+                  title={INFO_DISCOVERED}
                 />
                 <Metric variant="stat"
                   value={compact(s.labelled)}
@@ -126,13 +142,15 @@ export function EngineBar({
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
+        {/* ⭐ U24 (audit 7 Nov): kosakata & urutan slot = footer BNB (Detected · Scored · …). "Errors" & "Metadata" (jargon
+            internal: galat RPC penyedia data, cakupan metadata) TIDAK dihapus: pindah ke panel rincian (Reliability) yang
+            dibuka bar ini, dgn label & catatan yang menjelaskan. Penjelasan bar lewat `title` (bar = <button>, popover
+            ketuk tak boleh bersarang di dalamnya; di layar sentuh ketuk bar membuka rincian). */}
         <span className="eb-items">
-          <Metric as="span" variant="inline" className="eb-metric" label="Detected" value={v((x) => `${compact(x.processedPerHour)}/h`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Scored" value={v((x) => `${x.scoredPerHour.toFixed(1)}/h`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Selectivity" value={v((x) => `${x.selectivityPct.toFixed(2)}%`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Errors" value={v((x) => `${x.errorRatePct.toFixed(1)}%`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Metadata" value={v((x) => `${x.metadataCoveragePct.toFixed(0)}%`)} />
-          <Metric as="span" variant="inline" className="eb-metric" label="Uptime" value={v((x) => `${x.uptimeHours.toFixed(1)}h`)} />
+          <Metric as="span" variant="inline" className="eb-metric" label="Detected" value={v((x) => `${compact(x.processedPerHour)}/h`)} title={INFO_DETECTED} />
+          <Metric as="span" variant="inline" className="eb-metric" label="Scored" value={v((x) => `${x.scoredPerHour.toFixed(1)}/h`)} title={INFO_SCORED} />
+          <Metric as="span" variant="inline" className="eb-metric" label="Selectivity" value={v((x) => `${x.selectivityPct.toFixed(2)}%`)} title={INFO_SELECTIVITY} />
+          <Metric as="span" variant="inline" className="eb-metric" label="Uptime" value={v((x) => `${x.uptimeHours.toFixed(1)}h`)} title={INFO_UPTIME} />
         </span>
 
         <span className={`eb-status ${statusKelas}`}>
@@ -144,6 +162,18 @@ export function EngineBar({
     </footer>
   )
 }
+
+/* U24: penjelas metrik footer (title). Arti dicek di synt-dash api.rs `overview` (putaran 2, Reviewer): `uptime_hours` &
+   laju per jam dihitung sejak `cohort` = mtime binary synt-v10 (synt-v10 config.rs, synt-dash `cohort_aktif`), BUKAN
+   waktu restart: restart tanpa ganti kode tak mengatur ulang, jadi rentangnya bisa memuat waktu mati. Selectivity = lolos
+   penyaringan ÷ disaring (tak semua yang lolos akhirnya dinilai). Discovered = `v10_coin` sejak cohort yang sama. */
+const INFO_DETECTED = 'New pump.fun pairs the engine screened per hour, averaged since the current engine version was built.'
+const INFO_SCORED = 'Pairs per hour that got a full synt audit score, averaged since the current engine version was built.'
+const INFO_SELECTIVITY = 'Share of screened pairs that pass screening. Pairs are scored only after passing it.'
+const INFO_UPTIME = 'Hours since the current engine version was built. A restart without a code change does not reset it, so this can include downtime. The per-hour figures are averages over this time.'
+const INFO_RPC = 'Share of this hour’s calls to the Solana data provider (RPC) that failed.'
+const INFO_METADATA = 'Share of scored tokens whose metadata (name, symbol, image and links) the engine fetched.'
+const INFO_DISCOVERED = 'New pairs the engine detected since the current engine version was built.'
 
 /* A2: `Metric` & `Stat` lokal dihapus → komponen bersama `@/components/Metric` (varian `inline` & `stat`). */
 

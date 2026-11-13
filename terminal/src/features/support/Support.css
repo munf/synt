@@ -1,0 +1,79 @@
+/* Drawer Support (4 Nov). Memakai bahasa visual drawer lain (SidePanels.css `sp-*`, form akun `ac-*`). */
+
+.su-fieldset { margin: 0; padding: 0; border: none; min-width: 0; }
+.su-fieldset legend { padding: 0; margin-bottom: var(--sp-3); }
+/* label topik berupa kata, bukan angka: font badan, bukan mono */
+.su-topik { font-family: var(--font-sans); }
+
+.su-lewat { color: var(--down); }
+
+.su-jebakan {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.su-lampiran {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--panel-3);
+}
+
+.su-lampiran li {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-base);
+}
+
+.su-lampiran li:last-child { border-bottom: none; }
+
+.su-lampiran-label { color: var(--mute); }
+
+.su-lampiran-nilai {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  color: var(--dim);
+}
+
+.su-lampiran li.is-lepas .su-lampiran-nilai { font-family: var(--font-sans); color: var(--mute); font-style: italic; }
+
+.su-lampiran-aksi {
+  padding: var(--sp-1) var(--sp-2);
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--mute);
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.su-lampiran-aksi:hover { color: var(--ink); background: var(--raise); }
+
+.su-terkirim {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+}
+
+.su-terkirim h3 { margin: 0; font-size: var(--fs-xl); color: var(--ink); }
+.su-terkirim p { margin: 0; font-size: var(--fs-lg); color: var(--dim); line-height: var(--lh-relaxed); }
+
+.su-kontak a { color: var(--accent); }
+.su-pilih { user-select: all; color: var(--dim); }

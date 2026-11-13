@@ -30,6 +30,7 @@ export function adaptEngine(o: Overview): EngineStatus {
 
     errorRatePct: num(o.error_rate_pct),
     errorsThisHour: num(o.errors_this_hour),
+    rpcCallsThisHour: typeof obj(o.cost).rpc_calls_this_hour === 'number' ? num(obj(o.cost).rpc_calls_this_hour) : null,
     metadataCoveragePct: num(o.metadata_coverage_pct),
 
     discovered: num(s.discovered),
@@ -69,7 +70,12 @@ export function adaptEngine(o: Overview): EngineStatus {
             : num(t.selectivity_pct) > 0
               ? 'active'
               : 'down',
-        note: `${num(o.error_rate_pct).toFixed(1)}% error`,
+        /* U24 putaran 2: 0 panggilan RPC tercatat (mis. awal jam; sebelum B15 selalu 0 krn hanya `shyft_rpc` dijumlah)
+           → "0.0% error" bukan pengukuran; tanpa klaim galat. */
+        // field `cost` tak dikirim (permintaan publik lewat Caddy membuang field internal) → tanpa klaim apa pun
+        note: typeof obj(o.cost).rpc_calls_this_hour !== 'number'
+          ? 'error rate not reported'
+          : num(obj(o.cost).rpc_calls_this_hour) > 0 ? `${num(o.error_rate_pct).toFixed(1)}% error` : 'no RPC calls recorded',
       },
     ],
   }

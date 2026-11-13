@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '@/components/Avatar'
 import { StatusChip } from '@/components/StatusChip'
+import { ScoreSpark } from '@/components/ScoreCell'
 import { InfoPopover } from '@/components/Popover'
 import { alamatPendek, pct, trendClass, uang, umur } from '@/lib/format'
 import { useWatchlist } from '@/lib/useWatchlist'
@@ -25,7 +26,7 @@ import './PairPanel.css'
  * lewat `adaptToken`) utk bar FLOW/DEVELOPER & fakta "More Info". Warna cincin = nada base rate (§0.5 / 6.1-2).
  * Quick buy NYATA sejak 2 Nov (SOL saja): jumlah dari pengaturan Quick buy, transaksi ditandatangani wallet pengguna.
  */
-export function PairPanel({ m, detail = null, onCalibration, badges }: {
+export function PairPanel({ m, detail = null, onCalibration, badges, ringkasTabel = false }: {
   m: PairModel
   /** SOL: detail `/api/token` (adaptToken) milik mint yang sama; null = belum dimuat / BNB. */
   detail?: TokenDetail | null
@@ -33,12 +34,34 @@ export function PairPanel({ m, detail = null, onCalibration, badges }: {
   onCalibration?: () => void
   /** Lencana di sebelah simbol (mis. SAMPLE di mode template). */
   badges?: React.ReactNode
+  /** U26b putaran 2: tabel di sebelahnya dlm mode sempit (tanpa chevron detail) → kartu audit memuat isi detail itu. */
+  ringkasTabel?: boolean
 }) {
   const d = detail && detail.mint === m.id ? detail : null
   return (
     <div className="pp">
       <InfoCard m={m} d={d} badges={badges} />
-      <AuditCard m={m} d={d} onCalibration={onCalibration} />
+      <AuditCard m={m} d={d} onCalibration={onCalibration} ringkas={ringkasTabel} />
+    </div>
+  )
+}
+
+/**
+ * ⭐ U21 (audit 7 Nov): panel saat feed belum menjawab = bentuk dua kartu panel (blok `.sk` spt TokenSkeleton), bukan
+ * kotak "Loading…" 103 px. Di 561-1100 px panel berada DI ATAS tabel: dulu kotak kecil itu tumbuh jadi panel ±770 px
+ * saat data tiba dan mendorong tabel yang sudah terlihat ke luar layar (CLS 0,45 di 1024). Tinggi minimum kartu =
+ * kartu SOL nyata (InfoCard 434, AuditCard 310 di 561-1100, diukur 8 Nov); markup sama dipakai kerangka statis
+ * index.html.
+ */
+export function PairPanelSkeleton() {
+  return (
+    <div className="pp pp-skel" role="status" aria-label="Loading token details">
+      <section className="pp-card pp-skel-info">
+        <div className="pp-skel-head"><i className="sk sk-av" /><i className="sk sk-l" /></div>
+        <i className="sk sk-num" />
+        <div className="pp-skel-tiles"><i className="sk" /><i className="sk" /><i className="sk" /><i className="sk" /></div>
+      </section>
+      <section className="pp-card pp-skel-audit"><i className="sk sk-t" /><i className="sk sk-m" /><i className="sk sk-m" /><i className="sk sk-m" /></section>
     </div>
   )
 }
@@ -50,7 +73,8 @@ function alamatPanel(a: string): string {
 
 function Nilai({ n, text, label }: { n: Num; text: string; label: string }) {
   if (n.v === null) return n.why ? <InfoPopover info={n.why} label={label}>—</InfoPopover> : <>—</>
-  return <>{text}</>
+  // U22: nilai yang ada + sumbernya (likuiditas SOL = sisi SOL saja) → popover ketuk
+  return n.info ? <InfoPopover info={n.info} label={label}>{text}</InfoPopover> : <>{text}</>
 }
 
 function Tags({ tags }: { tags: Tag[] }) {
@@ -87,7 +111,8 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
 
   const liq = m.curveFunds ?? m.liq
   const tiles: Array<{ label: string; note?: string; node: React.ReactNode }> = [
-    { label: m.curveFunds ? 'Curve funds' : 'Liquidity', note: m.curveFunds ? '(one side)' : undefined, node: <Nilai n={liq} text={uang(liq.v)} label="Liquidity" /> },
+    // U22: SOL = sisi SOL saja (padanan BNB "Curve funds (one side)")
+    { label: m.curveFunds ? 'Curve funds' : 'Liquidity', note: m.curveFunds ? '(one side)' : m.chain === 'sol' ? '(SOL side)' : undefined, node: <Nilai n={liq} text={uang(liq.v)} label="Liquidity" /> },
     { label: 'Market cap', node: <Nilai n={m.mcap} text={uang(m.mcap.v)} label="Market cap" /> },
     {
       label: m.holders.label,
@@ -230,7 +255,7 @@ const BAR_SOL: Array<['flow' | 'developer', string, string]> = [
   ['developer', 'Developer', 'Weight based on creator history'],
 ]
 
-function AuditCard({ m, d, onCalibration }: { m: PairModel; d: TokenDetail | null; onCalibration?: () => void }) {
+function AuditCard({ m, d, onCalibration, ringkas = false }: { m: PairModel; d: TokenDetail | null; onCalibration?: () => void; ringkas?: boolean }) {
   const s = m.score
   const bnb = m.chain === 'bnb'
   const nilai = s.kind === 'value'
@@ -317,6 +342,7 @@ function AuditCard({ m, d, onCalibration }: { m: PairModel; d: TokenDetail | nul
           </p>
         )}
         {bnb && !nilai && <p className="pp-reason">{s.info}</p>}
+        {ringkas && <LintasanSkor m={m} />}
 
         {(m.scoreWindow || bnb) && (
           <div className="pp-window">
@@ -331,6 +357,36 @@ function AuditCard({ m, d, onCalibration }: { m: PairModel; d: TokenDetail | nul
         )}
       </div>
     </section>
+  )
+}
+
+/**
+ * ⭐ U26b putaran 2 (Reviewer): di tabel sempit (ponsel / kartu < 700 px) chevron detail baris disembunyikan dan sel
+ * SCORE tanpa sparkline → isi detail yang tak ada di panel dibawa ke sini (teks sama dgn PairTable `Expand`): evolusi
+ * skor (sparkline bertangga + "Scored N× so far · a → b", CLAUDE.md "tak boleh dihilangkan") dan "A score is an audit,
+ * not a guarantee." (+ jumlah cek terukur SOL; BNB sudah menulisnya di atas). Hanya dirender saat `ringkas`.
+ */
+function LintasanSkor({ m }: { m: PairModel }) {
+  const s = m.score
+  if (s.kind !== 'value') return null
+  const h = s.spark
+  const naik = !!h && (h[h.length - 1] ?? 0) >= (h[0] ?? 0)
+  return (
+    <div className="pp-traj">
+      {h && h.length > 1 && (
+        <p className="pp-traj-sum">
+          <ScoreSpark points={h} rising={naik} />
+          <span>
+            Scored <strong>{h.length}×</strong> so far{' · '}
+            <span className={naik ? 'is-up' : 'is-down'}>{h[0]} → {h[h.length - 1]}</span>
+          </span>
+        </p>
+      )}
+      <p className="pp-reason">
+        {m.chain !== 'bnb' && s.measured !== null && <>Only {s.measured} of {s.checksMax ?? s.max} checks could be measured for this pair. </>}
+        A score is an audit, not a guarantee.
+      </p>
+    </div>
   )
 }
 

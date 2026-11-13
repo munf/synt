@@ -8,7 +8,8 @@
   align-items: stretch;
   gap: var(--sp-5);
   /* Yang dikurangi: topbar + padding .shell-main (--sp-5 & --sp-8) + footer (AppShell.css) */
-  height: calc(100vh - var(--topbar-h) - var(--sp-5) - var(--sp-8) - var(--footer-h));
+  /* U23: + ruang pil early access selama tampil (DevNotice.css; 0 tanpa pil) */
+  height: calc(100vh - var(--topbar-h) - var(--sp-5) - var(--sp-8) - var(--footer-h) - var(--dn-h, 0px));
   min-height: 0;
 }
 
@@ -65,4 +66,15 @@
   .tr-panel { flex: none; width: 100%; height: auto; overflow: visible; }
   .tr-main { overflow: visible; }
   .tr-main > .pt { flex: none; }
+}
+
+/* ⭐ U21: cadangan bar toolbar selama memuat (≤1100; Trenches `Body`). Tinggi = PairToolbar nyata: satu baris 28 px,
+   BNB di ponsel dua baris (chip Scored only / Tax ≤ 5% + jumlah & Sort) 62 px. */
+.tr-bar-skel { min-height: 28px; }
+.tr-bar-skel .sk { width: 168px; max-width: 60%; height: 28px; border-radius: var(--r-md); }
+/* hanya teks "N pairs" (SOL, panel tertutup, semua kepala kolom tersortir terlihat): satu baris teks 11px */
+.tr-bar-skel.is-ringkas { min-height: 17px; }
+.tr-bar-skel.is-ringkas .sk { width: 72px; height: 12px; }
+@media (max-width: 560px) {
+  .tr-bar-skel.is-bnb { min-height: 62px; }
 }

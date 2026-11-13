@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, Link, useLocation } from 'react-router-dom'
 import { DevNotice } from './DevNotice'
 import { Popover } from './Popover'
@@ -12,6 +12,8 @@ import type { Notification, Message } from '@/features/account/types'
 import { Avatar } from './Avatar'
 import { TradeLayer } from '@/features/trade/TradeLayer'
 import { BUKA_MASUK } from '@/features/trade/TradePanel'
+import { SupportPanel } from '@/features/support/SupportPanel'
+import { BUKA_DUKUNGAN, bukaDukungan } from '@/features/support/konteks'
 import { EngineBar } from '@/features/engine/EngineBar'
 import { BnbEngineBar } from '@/features/engine/BnbEngineBar'
 import { adaptEngine } from '@/features/engine/adapt'
@@ -50,6 +52,16 @@ function Kerangka() {
     const buka = () => setWalletOpen(true)
     window.addEventListener(BUKA_MASUK, buka)
     return () => window.removeEventListener(BUKA_MASUK, buka)
+  }, [])
+  // ⭐ 4 Nov: drawer Support (tiket ke synt-akun). `kunci` naik tiap dibuka → form & lampiran dipasang ulang segar;
+  // `tradeKunci` = kartu trade asal tombol "Report a problem". null = tertutup.
+  const [support, setSupport] = useState<{ kunci: number; tradeKunci?: number } | null>(null)
+  const urutSupport = useRef(0)
+  useEffect(() => {
+    const buka = (e: Event) =>
+      setSupport({ kunci: ++urutSupport.current, tradeKunci: (e as CustomEvent<{ tradeKunci?: number }>).detail?.tradeKunci })
+    window.addEventListener(BUKA_DUKUNGAN, buka)
+    return () => window.removeEventListener(BUKA_DUKUNGAN, buka)
   }, [])
   // ⭐ 1 Nov (tahap C): lonceng & pesan dari synt-akun; tamu = kosong + ajakan masuk (bukan data contoh)
   const kotak = useKotak()
@@ -168,6 +180,18 @@ function Kerangka() {
             </Popover>
           </div>
 
+          {/* ⭐ 4 Nov (pemilik): Support = tombol "?" di sebelah Notifications → drawer tiket. Di HP ikon disembunyikan
+              (≤700px) → jalannya lewat item "Help & support" di menu akun. */}
+          <button
+            type="button"
+            className="shell-icon-btn"
+            aria-label="Help and support"
+            title="Help & support"
+            onClick={() => bukaDukungan()}
+          >
+            <HelpIcon />
+          </button>
+
           <div className="shell-pop-anchor">
             <button
               type="button"
@@ -203,6 +227,16 @@ function Kerangka() {
                 <Link to="/settings" onClick={() => setPop(null)}>
                   <GearIcon /> Settings
                 </Link>
+                <button
+                  type="button"
+                  className="pop-menu-hp"
+                  onClick={() => {
+                    setPop(null)
+                    bukaDukungan()
+                  }}
+                >
+                  <HelpIcon /> Help & support
+                </button>
                 <span className="pop-sep" />
                 {masuk ? (
                   <button
@@ -243,6 +277,10 @@ function Kerangka() {
       {/* Pemicu = item "Connect wallet" di popover akun, yang hilang saat popover menutup → fokus kembali ke tombol akun. */}
       <Drawer open={walletOpen} title="Wallet" onClose={() => setWalletOpen(false)} kembaliKe=".shell-wallet">
         <MasukPanel onSelesai={() => setWalletOpen(false)} />
+      </Drawer>
+
+      <Drawer open={support != null} title="Support" onClose={() => setSupport(null)} kembaliKe=".shell-wallet">
+        {support && <SupportPanel key={support.kunci} tradeKunci={support.tradeKunci} onSelesai={() => setSupport(null)} />}
       </Drawer>
 
       {/* ⭐ Status mesin NYATA dari /api/overview — bukan mock.
@@ -289,6 +327,21 @@ function MailIcon() {
     <svg viewBox="0 0 20 16" width="19" height="16" fill="none" aria-hidden="true">
       <rect x="1" y="1" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
       <path d="m1.8 2.2 8.2 6 8.2-6" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function HelpIcon() {
+  return (
+    <svg viewBox="0 0 18 18" width="18" height="18" fill="none" aria-hidden="true">
+      <circle cx="9" cy="9" r="7.75" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M6.9 6.9a2.15 2.15 0 1 1 3.05 1.95c-.6.28-.95.78-.95 1.4v.35"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="9" cy="12.9" r="0.95" fill="currentColor" />
     </svg>
   )
 }

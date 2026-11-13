@@ -2,9 +2,10 @@ import { Link } from 'react-router-dom'
 import { Kontak } from './bersama'
 
 /*
- * Syarat Penggunaan — isi EN & ID. Bentuk pasal mengikuti eel.synt.fun/syarat (synteel), satu perusahaan;
+ * Syarat Penggunaan — isi EN & ID. Bentuk pasal mengikuti eel.synt.fun/syarat (synteel);
  * isinya disesuaikan terminal analitik token (bukan nasihat keuangan, non-custodial, 18+).
  * ⚠️ Pasal 4 (kewajiban synt) = janji yang harus tetap benar di terminal: skor + base rate, data contoh ditandai.
+ * Pengelola = Muhammad Fajar Nugraha (perorangan) sejak 10 Nov; synt BUKAN milik PT Synt Tekno Multikarya (PT hanya synteel).
  * ⛔ Tanpa em dash.
  */
 
@@ -30,8 +31,8 @@ export function SyaratEn() {
       </section>
 
       <p>
-        These Terms of Use (the &quot;Terms&quot;) are an agreement between PT Synt Tekno Multikarya (&quot;synt&quot;)
-        and everyone who uses the synt terminal (a &quot;User&quot;).
+        These Terms of Use (the &quot;Terms&quot;) are an agreement between Muhammad Fajar Nugraha, an
+        individual in Indonesia (&quot;synt&quot;), and everyone who uses the synt terminal (a &quot;User&quot;).
       </p>
       <p>
         A User agrees to these Terms and to the synt <Link to="/privacy">Privacy Policy</Link> by using the Terminal or
@@ -193,7 +194,7 @@ export function SyaratEn() {
       <ol>
         <li>
           The Terminal, its program code, the Scores and the models behind them, the synt name and logo, and its design
-          and content other than Profiles belong to PT Synt Tekno Multikarya.
+          and content other than Profiles belong to Muhammad Fajar Nugraha.
         </li>
         <li>
           Program code that the browser downloads or that the public can see gives no permission to use, copy or
@@ -300,7 +301,7 @@ export function SyaratEn() {
 
       <h2>Article 18. Contact</h2>
       <p>
-        PT Synt Tekno Multikarya
+        Muhammad Fajar Nugraha
         <br />
         <Kontak baris />
       </p>
@@ -330,8 +331,8 @@ export function SyaratId() {
       </section>
 
       <p>
-        Syarat Penggunaan ini (&quot;Syarat&quot;) adalah perjanjian antara PT Synt Tekno Multikarya (&quot;synt&quot;)
-        dan setiap orang yang memakai terminal synt (&quot;Pengguna&quot;).
+        Syarat Penggunaan ini (&quot;Syarat&quot;) adalah perjanjian antara Muhammad Fajar Nugraha, perorangan di
+        Indonesia (&quot;synt&quot;), dan setiap orang yang memakai terminal synt (&quot;Pengguna&quot;).
       </p>
       <p>
         Pengguna menyetujui Syarat ini dan <Link to="/privacy">Kebijakan Privasi</Link> synt dengan memakai Terminal
@@ -483,7 +484,7 @@ export function SyaratId() {
       <ol>
         <li>
           Terminal, kode programnya, Skor beserta model di baliknya, nama dan logo synt, serta desain dan kontennya
-          selain Profil adalah milik PT Synt Tekno Multikarya.
+          selain Profil adalah milik Muhammad Fajar Nugraha.
         </li>
         <li>
           Kode program yang diunduh browser atau dapat dilihat publik tidak memberi izin untuk memakai, menyalin atau
@@ -592,7 +593,7 @@ export function SyaratId() {
 
       <h2>Pasal 18. Kontak</h2>
       <p>
-        PT Synt Tekno Multikarya
+        Muhammad Fajar Nugraha
         <br />
         <Kontak id baris />
       </p>

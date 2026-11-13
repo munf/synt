@@ -8,9 +8,118 @@
     <meta name="description" content="synt is a Solana trading terminal that scores every new pair in its first minutes, so traders can see which launches are likely to rug before they buy." />
     <!-- Produk berbayar, bukan halaman marketing: jangan diindeks. -->
     <meta name="robots" content="noindex, nofollow" />
+    <!-- ⭐ U21 (audit 7 Nov): sebelum JS jalan. (1) Pilih kerangka isi (`data-rute`, lihat <body> & styles/kerangka.css).
+         (2) Rute Trenches: minta feed tampilan aktif SEKARANG (`preload as=fetch`), tidak menunggu JS + potongan rute
+         selesai. URL WAJIB sama persis dgn permintaan pertama aplikasi (routes/Trenches.tsx: chain & view dari URL,
+         lalu nilai tersimpan `synt.trenches.*`; api/client.ts `trenches` / `bnbTrenches`, limit 50), kalau tidak
+         browser mengunduh dua kali. '/' dialihkan ke /trenches TANPA query (spt main.tsx). -->
+    <!-- kerangka hanya tampil bila CSS aplikasi sudah ada (styles/kerangka.css membukanya); tanpa CSS = tak ada markup
+         polos yang berkedip (dev server menyuntik CSS lewat JS, atau stylesheet gagal diunduh) -->
+    <style>[data-kerangka] { visibility: hidden; }</style>
+    <script>
+      (function () {
+        try {
+          var d = document.documentElement, p = location.pathname
+          var simpan = function (k) { try { return JSON.parse(localStorage.getItem(k)) } catch (e) { return null } }
+          if (p === '/' || p === '/trenches') {
+            // '/' = <Navigate to="/trenches" replace /> (main.tsx) dilakukan di sini lebih dulu: tanpa ini React sempat
+            // melukis shell dgn isi kosong sebelum pengalihan, membuang kerangka. URL & riwayat sama (replace, tanpa query).
+            if (p === '/') history.replaceState(history.state, '', '/trenches')
+            d.setAttribute('data-rute', 'trenches')
+            if (simpan('synt.trenches.panel') === false) d.setAttribute('data-panel', 'tutup')
+            var q = new URLSearchParams(p === '/' ? '' : location.search), c = q.get('chain'), v = q.get('view'), url
+            var chain = c === 'bnb' || c === 'sol' ? c : simpan('synt.trenches.chain') === 'bnb' ? 'bnb' : 'sol'
+            d.setAttribute('data-chain', chain)
+            var muat = function (u) {
+              var l = document.createElement('link')
+              l.rel = 'preload'
+              l.as = 'fetch'
+              l.crossOrigin = 'anonymous'
+              l.href = u
+              document.head.appendChild(l)
+            }
+            if (chain === 'bnb') {
+              if (v !== 'new' && v !== 'graduated') v = simpan('synt.trenches.bnbView') === 'graduated' ? 'graduated' : 'new'
+              muat('/api/bnb/trenches?view=' + v + '&limit=50')
+              // kalibrasi BNB (chip Provisional di kepala SCORE, warna skor): dulu tiba belakangan → kepala tabel +21 px
+              muat('/api/bnb/calibration')
+            } else {
+              var sol = ['new', 'trending', 'bonding', 'graduated']
+              if (sol.indexOf(v) < 0) v = simpan('synt.trenches.view')
+              if (sol.indexOf(v) < 0) v = 'new'
+              muat('/api/trenches?view=' + v + '&limit=50')
+            }
+          } else if (/^\/(coin|bnb)\/[^/]+\/?$/.test(p)) {
+            d.setAttribute('data-rute', 'token')
+          }
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- ⭐ U21: kerangka statis (tanpa JS, warna & ukuran dari CSS aplikasi yang sudah dimuat di <head>): topbar, footer
+         engine, dan isi rute Trenches / halaman token dgn kelas yang SAMA dgn keadaan memuat React → saat React mengambil
+         alih tak ada yang melompat. Isi rute dipindah utuh ke fallback rute pertama (main.tsx `KerangkaAwal`) sampai
+         potongan rute siap. Diganti seluruhnya oleh React; jangan menaruh apa pun yang interaktif di sini. -->
+    <div id="root"><div class="shell" data-kerangka aria-busy="true">
+      <header class="shell-top">
+        <span class="shell-logo" aria-hidden="true"><svg viewBox="0 0 531 558" width="22" height="22" aria-hidden="true"><path d="M289 150l30 30v92h44v76l-98 98-30-30v-92h-44v-76z" fill="currentColor" /></svg></span>
+      </header>
+      <main class="shell-main">
+        <p class="sr-only" role="status">Loading page</p>
+        <div class="tr kr-tr" data-untuk="trenches" aria-hidden="true">
+          <div class="rail"></div>
+          <div class="tr-col">
+            <div class="tvb has-chain">
+              <div class="tcs"><div class="tcs-seg"><i class="tcs-opt"></i><i class="tcs-opt"></i></div></div>
+              <div class="tvb-seg"><i class="tvb-opt"></i><i class="tvb-opt"></i><i class="tvb-opt"></i><i class="tvb-opt"></i></div>
+              <i class="tvb-search"></i>
+            </div>
+            <div class="tr-body">
+              <div class="tr-panel">
+                <div class="pp pp-skel">
+                  <section class="pp-card pp-skel-info"><div class="pp-skel-head"><i class="sk sk-av"></i><i class="sk sk-l"></i></div><i class="sk sk-num"></i><div class="pp-skel-tiles"><i class="sk"></i><i class="sk"></i><i class="sk"></i><i class="sk"></i></div></section>
+                  <section class="pp-card pp-skel-audit"><i class="sk sk-t"></i><i class="sk sk-m"></i><i class="sk sk-m"></i><i class="sk sk-m"></i></section>
+                </div>
+              </div>
+              <div class="tr-main">
+                <div class="tr-bar tr-bar-skel"><i class="sk"></i></div>
+                <div class="tr-bar"><div class="tr-chainbar"><div class="tcs"><div class="tcs-seg"><i class="tcs-opt"></i><i class="tcs-opt"></i></div></div></div></div>
+                <div class="pt is-compact">
+                  <div class="pt-head"><span>Token</span><span>Score</span></div>
+                  <div class="pt-body">
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                    <div class="pt-row is-skeleton"><span class="pt-token"><i class="pt-sk pt-sk-av"></i><i class="pt-sk pt-sk-l"></i></span><span><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="ta-r"><i class="pt-sk"></i></span><span><i class="pt-sk"></i></span><span class="pt-actions"><i class="pt-sk pt-sk-buy"></i></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <section class="page" data-untuk="token" aria-hidden="true">
+          <div class="cd tv tv-skel">
+            <header class="cd-head">
+              <div class="cd-identity"><i class="sk sk-av"></i><i class="sk sk-l"></i></div>
+              <div class="cd-metrics"><i class="sk sk-cell"></i><i class="sk sk-cell is-sampai-1080"></i><i class="sk sk-cell is-sampai-1080"></i><i class="sk sk-cell"></i><i class="sk sk-cell"></i><i class="sk sk-cell"></i><i class="sk sk-cell"></i></div>
+            </header>
+            <div class="cd-body">
+              <div class="cd-main"><section class="cd-card cd-chart"><i class="sk sk-chart"></i></section></div>
+              <aside class="cd-side">
+                <section class="cd-card tv-skel-card"><i class="sk sk-num"></i><i class="sk sk-m"></i><i class="sk sk-m"></i><i class="sk sk-m"></i></section>
+                <section class="cd-card tv-skel-card"><i class="sk sk-t"></i><i class="sk sk-m"></i><i class="sk sk-m"></i></section>
+              </aside>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer class="eb"><div class="eb-bar"></div></footer>
+    </div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

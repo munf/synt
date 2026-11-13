@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { SumberGambar } from '@/components/Avatar'
+import { umur } from '@/lib/format'
 
 /* ─────────────────────────────────────────────────────────────────────────
    A4 (DESIGN-TERMINAL §3.2): model SATU halaman token utk kedua chain.
@@ -20,6 +21,15 @@ export interface SelStrip {
   why?: string
   title?: string
   tone?: string
+  /** U4: label panjang (fakta menit-2 BNB) boleh terlipat dua baris di tile kepala, angka sejajar di dasar baris. */
+  lipat?: boolean
+  /**
+   * U17 (audit 7 Nov): tile kepala yang hanya tampil sampai lebar ini (CSS): di atas 1080 kartu harga berdiri di samping
+   * chart, di atas lipatan. Dipasang pada tile harga, dan pada tile Δ utama HANYA bila kartu harga menampilkan Δ yang
+   * sama (`harga.utama` ≠ null). Putaran 2: baris timeframe di bawah chart tak dijadikan pengganti, karena pada tinggi
+   * layar umum (≤ 800) ia jatuh di bawah lipatan.
+   */
+  hanyaSampai?: 1080
 }
 
 /** Perubahan harga satu rentang (5m/1h/24h, "Since launch"). */
@@ -187,6 +197,21 @@ export function rapikanTeks(s: string | null | undefined): string | null {
     .replace(/\s+/g, ' ')
     .trim()
   return t || null
+}
+
+/** U3: panjang jendela Δ (detik) per label sel timeframe. */
+const DETIK_JENDELA: Record<string, number> = { '5m': 300, '1h': 3600, '6h': 21_600, '24h': 86_400 }
+
+/**
+ * U3 (audit 7 Nov): jendela Δ yang lebih panjang dari umur pair → sebab "—" berbasis umur; jendela yang muat → null.
+ * DexScreener mengisi h1 = h6 = h24 dgn perubahan SEJAK pair dibuat utk pair muda → token 26 menit tampil "+209% 24h".
+ * Umur = umur token menurut synt: batas atas umur pair mana pun (pair DEX lahir bersama/sesudah token), jadi aturan ini
+ * tak pernah menyembunyikan angka yang sah. Sama utk SOL & BNB. Umur tak diketahui (≤ 0 / tak sah) → null.
+ */
+export function sebabJendelaMuda(label: string, umurDetik: number | null | undefined): string | null {
+  const j = DETIK_JENDELA[label]
+  if (j === undefined || umurDetik == null || !Number.isFinite(umurDetik) || umurDetik <= 0 || umurDetik >= j) return null
+  return `Pair is ${umur(umurDetik)} old, so there is no full ${label} window yet.`
 }
 
 /** Hanya URL http(s) yang boleh jadi tautan (metadata token = teks bebas pembuat token). */

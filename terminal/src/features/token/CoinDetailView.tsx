@@ -9,13 +9,14 @@ import { PriceChartLive } from './PriceChartLive'
 import { kursSolUsd } from './adaptDetail'
 import { alamatPendek, harga, uang, usd, compact, umur } from '@/lib/format'
 import { namaDex, namaPool, teksDiperiksa, useDexNama, useDexPasar, useTokenFacts, type DexFakta, type Fakta, type HargaFakta, type LpFakta } from './externalFacts'
-import { JUDUL_PASAR_BELUM, LABEL_PASAR_BELUM, labelNetFlow as labelNetFlowDari, menitJendela, mesinSegar as segarDari, teksNetFlow, teksTop10 } from './labels'
+import { JUDUL_PASAR_BELUM, LABEL_LIKUIDITAS_SOL, LABEL_PASAR_BELUM, SEBAB_SEJAK_TAK_TERCATAT, infoLikuiditasSol, labelNetFlow as labelNetFlowDari, menitJendela, mesinSegar as segarDari, teksNetFlow, teksTop10 } from './labels'
 import { CopyIcon, DaftarFaktor, ExternalIcon, FactsCard, kelasDelta, TabKosong, teksPersen, TokenView, WarnIcon } from './view/TokenView'
-import { CatatanBasi } from './chart/ChartBits'
+import { CatatanBasi } from './chart/ChartRingan'
 import {
   N_TABEL_SOL,
   TANGGA_SOL,
   rapikanTeks,
+  sebabJendelaMuda,
   tautanSosial,
   type BarisFakta,
   type Delta,
@@ -180,7 +181,11 @@ export function CoinDetailView({ coin: c, sample = false, onKeputusan, muat }: {
   const deltas: Delta[] = [
     // ⭐ 1c: change_pct = harga kini vs harga PERTAMA `v10_flow` → "Since launch" (bukan 24 jam).
     sejak,
-    ...sel.map((x) => ({ label: x.label, value: x.value, why: x.title })),
+    // U3: jendela lebih panjang dari umur pair → "—" + umur (DexScreener mengisi h1 = h24 utk pair muda)
+    ...sel.map((x) => {
+      const muda = sebabJendelaMuda(x.label, c.ageSecs)
+      return muda ? { label: x.label, value: null, why: muda } : { label: x.label, value: x.value, why: x.title }
+    }),
   ]
 
   // A5: /api/holders gagal tapi daftar lama ada → daftar tetap + catatan (tab Top holders memuat sendiri)
@@ -190,7 +195,8 @@ export function CoinDetailView({ coin: c, sample = false, onKeputusan, muat }: {
   /* ⭐ R2: angka kepala & kartu harga = preview (1c: "Since launch", "Net flow, first N min" bukan volume,
      "(at audit)"; likuiditas < $1 → "<$1", tak terukur → "—" + sebab). */
   const mc = { label: 'Market cap', value: uang(c.marketCap), why: why.mc }
-  const liq = { label: 'Liquidity', value: uang(c.liquidity), why: why.liq }
+  // U22: sisi SOL saja (labels.ts); sumber per keadaan engine (`complete` = pool DexScreener, else bonding curve)
+  const liq = { label: LABEL_LIKUIDITAS_SOL, value: uang(c.liquidity), why: why.liq, title: infoLikuiditasSol(c.complete) }
   const netFlow = { label: labelNetFlowDari(c.windowSecs), value: teksNetFlow(c.netFlowUsd), why: 'Net flow was not measured for this pair.' }
   const top10 = { label: 'Top 10 (at audit)', value: teksTop10(c.top10Pct), why: 'Top 10 share was not recorded when this pair was audited.' }
   const hargaTeks = c.marketNotLoaded || !(c.price > 0) ? null : harga(c.price)
@@ -218,23 +224,28 @@ export function CoinDetailView({ coin: c, sample = false, onKeputusan, muat }: {
     },
     metrik: [
       { key: 'mc', ...mc },
-      { key: 'price', label: 'Price', value: hargaTeks, why: why.harga },
-      {
+      // U17: harga besar kartu harga menggantikan tile ini di > 1080 px (TokenView.css)
+      { key: 'price', label: 'Price', value: hargaTeks, why: why.harga, hanyaSampai: 1080 },
+      /* ⭐ U16 (audit 7 Nov): harga pertama mesin tak tercatat → "Since launch" PASTI "—" selamanya. Tile kepala dilepas
+         (tak diganti angka lain: 5m/1h/24h DexScreener sudah ada di baris timeframe di bawah chart, U3 membuatnya "—"
+         bila jendela > umur pair, dan mengulangnya di kepala = KPI ganda U17). Sebabnya tetap terbaca lewat popover sel
+         "Since launch" baris timeframe (`why.sejak`). */
+      ...(c.sinceLaunchNever ? [] : [{
         key: 'since', label: 'Since launch', why: why.sejak,
         value: c.changeSinceLaunch === null ? null : teksPersen(c.changeSinceLaunch),
         tone: c.changeSinceLaunch === null ? undefined : kelasDelta(c.changeSinceLaunch),
-      },
+        // U17 putaran 2: > 1080 px Δ yang sama tampil di samping harga kartu harga (`utama`); bila "—", tile + sebabnya tetap
+        ...(c.changeSinceLaunch === null ? {} : { hanyaSampai: 1080 as const }),
+      }]),
       { key: 'flow', ...netFlow },
       { key: 'liq', ...liq },
       { key: 'holders', label: 'Holders (at audit)', value: c.holders ? compact(c.holders) : null, why: why.holders },
       { key: 'top10', ...top10, tone: c.top10Pct !== null && c.top10Pct > 30 ? 'is-down' : undefined },
     ],
+    /* ⭐ U17 (audit 7 Nov): MC, likuiditas, holders, Top 10 & Net flow dulu tampil dua kali (strip kepala + grid ini).
+       Tempatnya kini strip kepala saja (ringkasan, terlihat di atas lipatan di semua lebar); kartu harga = harga + Δ,
+       Curve, pita beli/jual kurva. */
     pasar: [
-      { key: 'mc', ...mc },
-      { key: 'liq', ...liq },
-      { key: 'holders', label: 'Holders (at audit)', value: c.holders ? String(c.holders) : null, why: why.holders },
-      { key: 'top10', ...top10 },
-      { key: 'flow', ...netFlow },
       { key: 'curve', label: 'Curve', value: kurva.singkat },
     ],
     /* ⭐ Butir 7: hitungan perubahan cadangan kurva (vSOL naik = beli, turun = jual) dlm jendela ukur. Bukan wallet,
@@ -263,7 +274,7 @@ export function CoinDetailView({ coin: c, sample = false, onKeputusan, muat }: {
         'One minute candles from synt’s own reading of the pump.fun bonding curve, timed from when synt detected the pair, in your time zone. They move live while the pair trades on the curve. Longer periods are combined from the 1 minute candles.',
       satuan: sample ? null : kursSolUsd() ? 'USD' : 'SOL',
       // ⭐ Chart mengambil datanya SENDIRI dari /api/candles (+ SSE hidup, P4).
-      isi: <PriceChartLive mint={c.mint} symbol={simbol} ageSecs={c.ageSecs} lulus={c.curveState === 'graduated'} sample={sample} />,
+      isi: <PriceChartLive mint={c.mint} symbol={simbol} ageSecs={c.ageSecs} lulus={c.curveState === 'graduated'} akhirKurva={lulus} sample={sample} />,
       /* P2/P3: candle mesin hanya jendela launch (`v10_candle`, maks ±600 dtk), bukan pasar pasca-lulus → catatan utk
          SEMUA pair lulus (mesin `complete`, atau RugCheck mencatat pool pump.fun pasca-lulus) */
       catatan: lulus ? <p className="cd-chart-note">Chart covers launch trading only, not the market after graduation.</p> : undefined,
@@ -389,10 +400,10 @@ function PeringatanLikuiditas({ liq }: { liq: number | null }) {
       <WarnIcon />
       {/* dulu "a $0 order": likuiditas $2 / 10 = $0,2 dibulatkan ke $0 */}
       {liq / 10 >= 1
-        ? <>Liquidity is {usd(liq)}. A {usd(liq / 10)} order moves price noticeably.</>
+        ? <>SOL-side liquidity is {usd(liq)}. A {usd(liq / 10)} order moves price noticeably.</>
         : liq < 1
-          ? <>Liquidity is under $1. Almost any order moves price noticeably.</>
-          : <>Liquidity is {usd(liq)}. Almost any order moves price noticeably.</>}
+          ? <>SOL-side liquidity is under $1. Almost any order moves price noticeably.</>
+          : <>SOL-side liquidity is {usd(liq)}. Almost any order moves price noticeably.</>}
     </p>
   )
 }
@@ -424,7 +435,7 @@ function alasanKosong(c: CoinDetail) {
   return {
     mc: beku ?? 'The engine has no market cap for this pair yet.',
     harga: beku ?? 'No price has been recorded for this pair yet.',
-    sejak: beku ?? 'The engine has no first price for this pair, so the change since launch is unknown.',
+    sejak: beku ?? (c.sinceLaunchNever ? SEBAB_SEJAK_TAK_TERCATAT : 'The engine has no first price for this pair, so the change since launch is unknown.'),
     liq: beku ?? 'The engine did not report liquidity for this pair.',
     holders: 'No holder count was recorded when this pair was audited.',
   }
@@ -519,10 +530,10 @@ function barisDex(fakta: DexFakta): BarisFakta {
  * pair-nya, jadi tak ada nama/harga/skor mesin di sini. Nama & simbol dari DexScreener bila ada, else mint dipendekkan.
  */
 export function TakDilacak({ mint, takDikenalMesin = false }: { mint: string; takDikenalMesin?: boolean }) {
-  // nama, LP & Dex paid dari SATU permintaan `/api/facts` (dibagi & di-cache di externalFacts; bila CoinDetailView
-  // sudah bertanya, ini tanpa permintaan baru)
+  // nama & Dex paid dari SATU permintaan `/api/facts` (dibagi & di-cache di externalFacts; bila CoinDetailView
+  // sudah bertanya, ini tanpa permintaan baru). U25(c): LP tak ditampilkan utk mint tak dilacak.
   const dn = useDexNama(mint)
-  const { lp, dex } = useTokenFacts(mint, true, false)
+  const { dex } = useTokenFacts(mint, true, false)
   const nama = dn === 'loading' || dn === 'unavailable' ? null : dn
   const { copy, copied } = useCopy()
   /* mesin 404: hanya tampil sbg "tak dilacak" bila DexScreener mengenal tokennya (mis. JUP); alamat yang tak
@@ -532,7 +543,8 @@ export function TakDilacak({ mint, takDikenalMesin = false }: { mint: string; ta
   // ⛔ DexScreener tak bisa ditanya ≠ tak dikenal: jangan menulis "not found" utk token yang mungkin ada
   if (takDikenalMesin && dn === 'unavailable') return <p className="tr-empty">This token isn't tracked by synt, and its details are unavailable right now. Try again shortly.</p>
   const pendek = alamatPendek(mint)
-  const memuat = lp.status === 'loading'
+  // U25(c): LP tak tampil di sini → muat/periksa mengikuti Dex paid (satu permintaan /api/facts yang sama)
+  const memuat = dex.status === 'loading'
   return (
     <div className="cd tv">
       <header className="cd-head">
@@ -554,23 +566,27 @@ export function TakDilacak({ mint, takDikenalMesin = false }: { mint: string; ta
       <p className="cd-sample-note" role="note">
         {memuat
           ? 'Checking this token…'
-          : 'Not tracked by synt. There is no synt audit score, price or curve data for this token. synt audits new pump.fun launches.'}
+          : <>Not tracked by synt. There is no synt audit score, price or curve data for this token. synt audits new pump.fun launches.{nama && <> <a href={`https://dexscreener.com/solana/${mint}`} target="_blank" rel="noopener noreferrer nofollow">View it on DexScreener</a>.</>}</>}
       </p>
+      {/* ⭐ U25(c) (audit 7 Nov): baris "LP burned or locked" DILEPAS di sini. Mint tanpa bukti pump.fun = token mapan
+          (wSOL, BONK, USDC…) yang daftar pool RugCheck-nya tak lengkap: wSOL tertulis "No pool found" padahal pool-nya
+          termasuk yang terbesar di Solana. Burn/lock LP hanya bermakna utk pool launch baru. Dex paid tetap (fakta
+          DexScreener apa adanya) + penjelas bahwa itu pesanan berbayar di DexScreener, bukan tanda aman. */}
       <FactsCard
         solo
-        rows={[barisLp(lp, null), barisDex(dex)]}
+        rows={[dex.status === 'ok' ? { ...barisDex(dex), info: INFO_DEX_PAID_LUAR } : barisDex(dex)]}
         sumber={
-          lp.status === 'loading' || dex.status === 'loading'
-            ? 'Checking RugCheck and DexScreener…'
-            : gabungSumber([
-                lp.status === 'error' ? tidakMenjawab('RugCheck', lp) : 'LP from RugCheck',
-                dex.status === 'error' ? tidakMenjawab('DexScreener', dex) : 'Dex paid from DexScreener',
-              ], teksDiperiksa(lp, dex))
+          dex.status === 'loading'
+            ? 'Checking DexScreener…'
+            : gabungSumber([dex.status === 'error' ? tidakMenjawab('DexScreener', dex) : 'Dex paid from DexScreener'], teksDiperiksa(dex))
         }
       />
     </div>
   )
 }
+
+const INFO_DEX_PAID_LUAR =
+  'Paid orders DexScreener lists for this address, such as a token profile or boosts. It is not a safety signal.'
 
 /** A5: kerangka tab saat /api/holders belum menjawab (bukan "No holder list yet" yang terbaca sbg data kosong). */
 function TabMemuat() {

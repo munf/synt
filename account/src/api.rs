@@ -57,6 +57,11 @@ pub struct AppState {
     pub rem_dagang: Arc<Rem>,
     /// trading: saldo & posisi (tiap panggilan = RPC berbayar) per IP
     pub rem_baca_dagang: Arc<Rem>,
+    /// tiket support per IP & seluruh layanan (4 Nov)
+    pub rem_tiket: Arc<Rem>,
+    pub rem_tiket_global: Arc<Rem>,
+    /// None = `AKUN_SUPPORT_TG_*` kosong: tiket tersimpan, tak diteruskan
+    pub tg_dukungan: Option<Arc<crate::dukungan::Telegram>>,
     /// None = `AKUN_RPC_URL` kosong → rute trading menjawab 503
     pub dagang: Option<Arc<crate::dagang::Dagang>>,
     /// trading BNB Chain (3 Nov); None hanya bila klien HTTP gagal dibuat
