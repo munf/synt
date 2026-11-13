@@ -47,6 +47,20 @@ pub struct Counters {
     pub last_block: AtomicU64,
 }
 
+/// Aborts the task when dropped. A session that ends (dropped WebSocket,
+/// rejected subscription) must not leave its backfill running: the next
+/// session starts a new backfill over the same range, because the cursor did
+/// not move. A plain `JoinHandle` detaches on drop, so on a flaky endpoint
+/// every reconnect during a long backfill added one more full backfill.
+/// Aborting is safe: every insert is idempotent and the range is redone.
+struct AbortOnDrop<T>(tokio::task::JoinHandle<T>);
+
+impl<T> Drop for AbortOnDrop<T> {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
+}
+
 pub struct Recorder {
     pub rpc: Arc<Rpc>,
     pub pool: PgPool,
@@ -97,7 +111,7 @@ impl Recorder {
                 let s = self.clone();
                 let from = b as u64 + 1;
                 info!("backfill blocks {from}..={head} ({} blocks)", head - from + 1);
-                Some(tokio::spawn(async move { s.backfill(from, head).await }))
+                Some(AbortOnDrop(tokio::spawn(async move { s.backfill(from, head).await })))
             }
             Some(_) => None,
         };
@@ -133,9 +147,9 @@ impl Recorder {
             // The cursor only moves once the backfill is done. Otherwise a
             // crash in the middle of a backfill would skip the unfilled range.
             if let Some(h) = &backfill {
-                if h.is_finished() {
-                    let h = backfill.take().unwrap();
-                    match h.await {
+                if h.0.is_finished() {
+                    let mut h = backfill.take().unwrap();
+                    match (&mut h.0).await {
                         Ok(Ok(())) => info!("backfill done"),
                         Ok(Err(e)) => bail!("backfill failed: {e:#}"),
                         Err(e) => bail!("backfill panicked: {e}"),
@@ -612,5 +626,26 @@ mod tests {
         // four.meme liquidity lands about 10 s after graduation.
         assert!(GET_PAIR_SCHEDULE[0] > 10);
         assert!(*GET_PAIR_SCHEDULE.last().unwrap() >= 300);
+    }
+
+    #[tokio::test]
+    async fn backfill_stops_with_its_session() {
+        // The task holds a clone; once it is aborted the count drops back.
+        let alive = Arc::new(());
+        let a = alive.clone();
+        let h = AbortOnDrop(tokio::spawn(async move {
+            let _a = a;
+            std::future::pending::<()>().await
+        }));
+        tokio::task::yield_now().await;
+        assert_eq!(Arc::strong_count(&alive), 2);
+        drop(h);
+        for _ in 0..100 {
+            if Arc::strong_count(&alive) == 1 {
+                return;
+            }
+            tokio::task::yield_now().await;
+        }
+        panic!("backfill still running after its session ended");
     }
 }
