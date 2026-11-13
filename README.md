@@ -132,4 +132,4 @@ Code comments are partly in Indonesian, the team's working language. User-facing
 
 ## License
 
-`recorder/` is released under the MIT License, see [`recorder/LICENSE`](recorder/LICENSE). No license has been chosen yet for `terminal/` and `account/`.
+`terminal/` and `recorder/` are released under the MIT License, see [`terminal/LICENSE`](terminal/LICENSE) and [`recorder/LICENSE`](recorder/LICENSE). `account/` is published for reference only: no license is granted for it, so all rights are reserved.

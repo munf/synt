@@ -53,3 +53,7 @@ In production a reverse proxy does the same routing. No backend URL or key is bu
 5. **Status.** A toast follows the transaction until it is confirmed and links to Solscan. When it confirms, positions and the portfolio reload.
 
 Quick buy in Trenches runs the same flow with a saved default amount. The review dialog is shown unless the user turns off "Confirm before trading" in Quick buy settings.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
