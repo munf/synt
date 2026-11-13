@@ -264,6 +264,11 @@ Python 3, standard library only.
 - **Pool prices stop** 7 days after graduation, when the quote reserve falls
   below 1% of the first recorded one, or beyond the 1,000 most recent
   graduations.
+- **Pool prices have a gap after a restart.** The `Sync` sweep keeps its block
+  cursor in memory only. After a restart it starts at the head, 90 seconds
+  after the process, and stores each pair's reserves at that block instead.
+  `Sync` logs from the stop until then are not recorded, and `pool_poll` takes
+  no samples while the process is down.
 - **Pool prices go through `f64`.** Curve trades are exact decimal strings from
   the event; pool prices carry about 15 significant digits.
 - **Reorgs.** A `removed` log deletes its trade. The `Sync` sweep stays 3
