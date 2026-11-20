@@ -101,6 +101,11 @@
 .ip-trigger.pt-hk { font-weight: var(--fw-medium); color: var(--mute-2); white-space: nowrap; }
 .ip-trigger.pt-hk:hover, .ip-trigger.pt-hk[aria-expanded='true'] { color: var(--mute); }
 
+/* U18: "Climbed" (jalur skor umum) = teks redup, bukan chip; Held/Fell tetap chip. Setinggi chip agar baris tak lompat. */
+.ip-trigger.pt-path-dim { color: var(--mute-2); font-size: var(--fs-sm); line-height: var(--chip-h, 20px); white-space: nowrap; }
+.ip-trigger.pt-hl { white-space: nowrap; }
+.ip-trigger.pt-path-dim:hover, .ip-trigger.pt-path-dim[aria-expanded='true'] { color: var(--mute); }
+
 /* chip Provisional (BNB) di kepala Score */
 .ip-trigger.pt-prov-t { text-decoration: none; }
 .pt-prov {
@@ -297,7 +302,8 @@
 .pt-risk-chip.is-quiet { font-weight: var(--fw-medium); color: var(--mute); }
 /* Pemisah titik DI DALAM chip mono (preview `.tt-risk-chip + .tt-risk-chip::before`) */
 .pt-risk-t ~ .pt-risk-t .pt-risk-chip::before { content: "·"; margin-right: var(--sp-2); color: var(--mute-2); font-weight: var(--fw-normal); }
-.pt-risk-none { font-size: var(--fs-base); line-height: var(--lh-tight); color: var(--up); }
+.pt-risk-none { font-size: var(--fs-base); line-height: var(--lh-tight); color: var(--mute); }
+/* U19: dulu --up (hijau). Ketiadaan faktor penurun ≠ tanda aman ("Not measured" pun ikut hijau) → teks redup. */
 
 /* ── kurva bonding ── */
 .pt-curve { display: flex; align-items: center; gap: var(--sp-3); }

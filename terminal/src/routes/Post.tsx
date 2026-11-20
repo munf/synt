@@ -314,7 +314,7 @@ function PostPratinjau() {
   )
 }
 
-/** Tautan ke profil penulis — hanya di mode template; build biasa: rute profil dikunci (main.tsx), jadi teks biasa. */
+/** Tautan ke profil penulis — hanya di mode template. Rute `/profile/:handle` terbuka sejak 4 Nov (main.tsx); build biasa (salinan master) belum menautkan penulis, jadi teks biasa. */
 function ProfilAuthor({ id, className, children, ...rest }: { id: string; className?: string; children: ReactNode; 'aria-label'?: string }) {
   return TEMPLATE ? (
     <Link to={`/profile/${id}`} className={className} {...rest}>

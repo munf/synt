@@ -104,7 +104,7 @@ export function adaptToken(a: ApiToken): TokenDetail {
     {
       // ⭐ 1d: buys/sells `v10_flow` hanya jendela ukur 0-`window_secs` (synt-dash api.rs), bukan hitungan hidup
       // sisa kecil review: dulu patah "BUY/SELL, FIRST 6" / "MIN" di ≤390 → keterangan jadi satu kesatuan
-      label: 'Buy/sell,',
+      label: 'Curve buys / sells,',
       note: `first ${menit} min`,
       value: a.buys !== null ? `${a.buys} / ${a.sells ?? 0}` : '—',
       why: `Buys and sells were not measured in the first ${menit} min for this pair.`,

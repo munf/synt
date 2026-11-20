@@ -119,9 +119,9 @@ export interface PairModel {
   holders: Num & { label: 'Holders' | 'Buyers'; note: string }
   curve: Num & { note?: string }
   score: PairScore
-  /** Chip tabel (≤2): SOL faktor terberat, BNB sinyal gagal. */
+  /** Chip tabel (≤3): SOL hanya faktor yg menurunkan skor (U19), BNB sinyal gagal. */
   reasons: Reason[]
-  /** Tak ada alasan gagal → teks netral ("No flag raised"); null → "—". */
+  /** Tak ada alasan gagal → teks netral redup ("No table flags" / "No flag raised"); null → "—". */
   reasonsEmpty: string | null
   /** Sebab "—" di kolom alasan (popover ketuk). */
   reasonsWhy: string | null
@@ -200,8 +200,14 @@ const FAKTOR: Record<RiskFactor['kind'], { short: (v: number) => string; full: (
 
 const TREND: Record<string, PairStatus> = {
   held: { label: 'Held', tone: 'ok', info: 'Audit score held during scoring. Not a price move.' },
-  // R1: amber seperti preview (`.tt-flag.is-warn`): naik ke skor itu terukur lebih buruk daripada bertahan di sana
-  climbed: { label: 'Climbed', tone: 'warn', info: 'Audit score climbed during scoring. Not a price move.' },
+  // R1: dulu amber seperti preview. ⭐ U18 (audit 7 Nov): ±95% baris SOL "climbed" → chip amber di hampir semua baris
+  // tak membawa informasi & di samping MC negatif terbaca "harga naik". Kini nada 'muted' → PairTable merendernya
+  // sebagai teks redup (jalur yang umum); hanya Held/Fell yang jadi chip. Data & arti tak berubah.
+  climbed: {
+    label: 'Climbed',
+    tone: 'muted',
+    info: 'Audit score climbed during scoring, the most common path. Not a price move.',
+  },
   fell: { label: 'Fell', tone: 'bad', info: 'Audit score fell during scoring. Not a price move.' },
 }
 
@@ -236,14 +242,16 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
   const beku = r.marketNotLoaded === true
 
   const urut = [...r.factors].sort((a, b) => a.weight - b.weight)
-  /* R1: kolom TOP RISK = preview (TrenchesTable `RiskCell`): yang menurunkan skor dulu (terberat di depan), lalu sisanya
-     sbg konteks netral dlm urutan asal, maksimal TIGA chip (lima chip melipat & membengkakkan baris). */
-  const tampil = [...r.factors.filter((f) => f.weight < 0).sort((a, b) => a.weight - b.weight), ...r.factors.filter((f) => f.weight >= 0)]
-  const reasons: Reason[] = tampil.slice(0, 3).map((f) => ({
-    short: FAKTOR[f.kind].short(f.pct),
-    full: `${FAKTOR[f.kind].full(f.pct)}${f.weight < 0 ? ', lowering the score' : ''}.`,
-    bad: f.weight < 0,
-  }))
+  /* R1: kolom TOP RISK = preview (TrenchesTable `RiskCell`), terberat di depan, maksimal TIGA chip.
+     ⭐ U19 (audit 7 Nov): dulu sisa faktor ikut tampil sbg chip netral ("Dev 0%", "Top10 92%" redup di samping
+     "Dev 59%" merah) → kolom bernama TOP RISK memuat hal yg bukan risiko. Kini HANYA faktor yg menurunkan skor
+     (`weight < 0`, sama dgn BNB yg hanya memuat sinyal gagal); tak ada → "No table flags" (reasonsEmpty).
+     Bobot & ambang (`adapt.ts` bobot) tak disentuh; faktor lengkap tetap di panel (`reasonsFull`). */
+  const reasons: Reason[] = r.factors
+    .filter((f) => f.weight < 0)
+    .sort((a, b) => a.weight - b.weight)
+    .slice(0, 3)
+    .map((f) => ({ short: FAKTOR[f.kind].short(f.pct), full: `${FAKTOR[f.kind].full(f.pct)}, lowering the score.`, bad: true }))
   const reasonsFull: Reason[] = urut.map((f) => ({ short: FAKTOR[f.kind].short(f.pct), full: FAKTOR[f.kind].full(f.pct), bad: f.weight < 0 }))
   // Sebaran kepemilikan (gini) = konteks, tak pernah ditandai buruk di sini (ambangnya bukan ambang mesin)
   if (it.risk.gini !== null && it.risk.gini !== undefined && Number.isFinite(it.risk.gini)) {
@@ -316,7 +324,9 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     },
     score,
     reasons,
-    reasonsEmpty: r.factors.length ? null : 'Not measured',
+    // Review 21 Nov: "No lowering factors" bertentangan dgn halaman token utk faktor yang tak dinilai tabel
+    // (mis. sebaran kepemilikan/gini, ambang Dev beda) → kalimat dibatasi ke kolom ini; halaman token = daftar lengkap.
+    reasonsEmpty: r.factors.length ? 'No table flags' : 'Not measured',
     reasonsWhy: null,
     reasonsFull,
     status: null,

@@ -119,11 +119,11 @@ function Score({ m, compact, spark }: { m: PairModel; compact: boolean; spark: b
   )
 }
 
-/** TOP RISK: chip mono tanpa kotak dipisah titik, yang menurunkan skor berwarna, sisanya redup (BNB: sinyal gagal). */
+/** TOP RISK: hanya faktor yang menurunkan skor (U19; BNB: sinyal gagal), chip mono dipisah titik. Kosong → teks redup. */
 function Risk({ m }: { m: PairModel }) {
   if (!m.reasons.length) {
     return m.reasonsEmpty ? (
-      <span className="pt-risk-none">{m.reasonsEmpty}</span>
+      <span className="pt-risk-none" title={m.reasonsEmpty === 'No table flags' ? 'This column shows quick checks only. The token page lists every score factor.' : undefined}>{m.reasonsEmpty}</span>
     ) : (
       <Kosong why={m.reasonsWhy ?? undefined} label="Top risk" />
     )
@@ -264,6 +264,10 @@ function TagLineFit({ tags, sempit = false }: { tags: Tag[]; sempit?: boolean })
   )
 }
 
+/** U18: penjelas kepala "Score path" SOL. */
+const INFO_SCORE_PATH =
+  'How the audit score moved while synt was scoring this pair, not the price. Held and Fell are highlighted; Climbed is the common path and stays dim.'
+
 /** U10: penjelas kepala MC SOL ("Δ launch"). */
 const INFO_DELTA_SOL =
   'The % under market cap is the change since launch: the current price against the first price synt recorded for this pair. Token pages also show 5m, 1h and 24h changes from DexScreener, which cover other windows, so those numbers differ.'
@@ -274,9 +278,18 @@ const C: Record<string, Col> = {
   score: { id: 'score', label: 'Score', width: '176px', sort: 'score', render: (m, c) => <Score m={m} compact={c.compact} spark={c.spark} /> },
   trend: {
     id: 'trend',
-    label: 'Trend',
+    // ⭐ U18: kepala "Trend" terbaca sbg arah harga → "Score path"; kepalanya = pemicu penjelas "not the price"
+    label: 'Score path',
     width: '92px',
-    render: (m) => (m.trend ? <StatusChip label={m.trend.label} tone={m.trend.tone} info={m.trend.info} /> : <span className="pt-dim">—</span>),
+    render: (m) =>
+      !m.trend ? (
+        <span className="pt-dim">—</span>
+      ) : m.trend.tone === 'muted' ? (
+        // U18: Climbed = jalur umum → teks redup (tetap bisa diketuk utk penjelasnya), bukan chip
+        <InfoPopover info={m.trend.info ?? ''} label={m.trend.label} className="pt-path-dim">{m.trend.label}</InfoPopover>
+      ) : (
+        <StatusChip label={m.trend.label} tone={m.trend.tone} info={m.trend.info} />
+      ),
   },
   mc: {
     id: 'mc',
@@ -595,6 +608,9 @@ export function PairTable({
                   {c.label}
                   <span className="pt-sort-i" aria-hidden="true">{aktif === 'asc' ? '↑' : aktif === 'desc' ? '↓' : '↕'}</span>
                 </button>
+              ) : c.id === 'trend' ? (
+                // U18: kepala "Score path" sendiri = pemicu penjelas (kolom 92 px tak muat label + sub-label "not price")
+                <InfoPopover info={INFO_SCORE_PATH} label={c.label} className="pt-hl">{c.label}</InfoPopover>
               ) : (
                 c.label
               )}

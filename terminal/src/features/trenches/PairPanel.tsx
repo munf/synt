@@ -120,11 +120,12 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
       node: <Nilai n={m.holders} text={m.holders.v === null ? '' : m.holders.v.toLocaleString('en-US')} label={m.holders.label} />,
     },
     {
-      label: 'Buy/sell,',
+      // X2: sama dgn halaman token per chain (Sol "Curve buys / sells", BNB "Buys / sells" + "on the curve") supaya tak dibaca hitungan per-wallet
+      label: m.chain === 'sol' ? 'Curve buys / sells,' : 'Buys / sells,',
       note: m.bsNote,
       node:
         m.buys === null && m.sells === null ? (
-          <InfoPopover info="Buys and sells were not measured yet." label="Buy/sell">—</InfoPopover>
+          <InfoPopover info="Buys and sells were not measured yet." label={m.chain === 'sol' ? 'Curve buys / sells' : 'Buys / sells'}>—</InfoPopover>
         ) : (
           `${hitung(m.buys)} / ${hitung(m.sells)}`
         ),

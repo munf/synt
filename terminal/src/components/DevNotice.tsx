@@ -87,14 +87,18 @@ export function DevNotice() {
 
   if (!buka) return null
 
-  // mode template (lab): pemberitahuan mana yang nyata & mana contoh (1b putaran 2: Trenches & halaman token; butir 3-5: footer, Discovery & post)
+  // mode template (lab): pemberitahuan mana yang nyata & mana contoh (1b putaran 2: Trenches & halaman token; butir 3-5: footer, Discovery & post; X1: akun, profil, pesan, follow, watchlist, tiket & Buy/Sell nyata sejak 1-4 Nov)
   if (TEMPLATE) return (
     <div className="dn-backdrop" role="dialog" aria-modal="true" aria-labelledby="dn-title">
       <div className="dn-card">
         <h2 id="dn-title" className="dn-title">Terminal template</h2>
         <p className="dn-lead">
           This is the full template of the synt terminal. Every page is open so you can see the whole product and
-          what is still to be built. Trenches and its token search, token pages, the engine footer, the Discovery posts and coin lists, and the creator leaderboard show live data. Everything else is a sample.
+          what is still to be built. Live data: Trenches and its token search, token pages, the engine footer, the
+          Discovery posts and coin lists, and the creator leaderboard. Also real: wallet login and accounts, the wallet tracker and portfolio, profiles,
+          messages and notifications, follow, watchlist sync, and support tickets. Buy and Sell send real
+          transactions signed by your own wallet and move your own funds; synt never holds them. Still samples: the
+          Discovery profile, wallet and leaderboard cards, the Traders tab, and post comments.
           The public terminal is preview.synt.fun.
         </p>
         <button type="button" className="dn-ok" onClick={tutup}>Got it</button>

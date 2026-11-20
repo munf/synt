@@ -240,7 +240,10 @@ export function CoinDetailView({ coin: c, sample = false, onKeputusan, muat }: {
       { key: 'flow', ...netFlow },
       { key: 'liq', ...liq },
       { key: 'holders', label: 'Holders (at audit)', value: c.holders ? compact(c.holders) : null, why: why.holders },
-      { key: 'top10', ...top10, tone: c.top10Pct !== null && c.top10Pct > 30 ? 'is-down' : undefined },
+      /* ⭐ U19 (audit 7 Nov): dulu merah bila > 30% sementara tab Score factors menulis faktor yg sama hijau (+5 ✓ di
+         bawah ambang tampilan 95) → satu metrik dua warna. Kini nada ikut faktor `top10` (adaptDetail): merah hanya bila
+         faktor itu menurunkan; selain itu netral (spt Token facts & TokenPanel: top10 tinggi bukan tanda rug). */
+      { key: 'top10', ...top10, tone: c.factors.some((f) => f.id === 'top10' && !f.passed) ? 'is-down' : undefined },
     ],
     /* ⭐ U17 (audit 7 Nov): MC, likuiditas, holders, Top 10 & Net flow dulu tampil dua kali (strip kepala + grid ini).
        Tempatnya kini strip kepala saja (ringkasan, terlihat di atas lipatan di semua lebar); kartu harga = harga + Δ,
