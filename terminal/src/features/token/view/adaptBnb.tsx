@@ -29,6 +29,7 @@ import {
   tingkatBnb,
 } from '@/features/bnb/bnbFormat'
 import { BSCSCAN_ADDRESS, BSCSCAN_TOKEN } from '@/features/bnb/useBnb'
+import { BnbHolders } from '@/features/bnb/BnbHolders'
 import { frasaJendela } from '@/features/trenches/pairModel'
 import { PosisiToken } from '@/features/trade/Posisi'
 import { TradePanel } from '@/features/trade/TradePanel'
@@ -296,11 +297,11 @@ export function modelBnb(d: BnbTokenK, o: {
         id: 'holders',
         label: 'Top holders',
         n: null,
-        isi: (
-          <TabKosong
-            judul="Top holders are not listed for BNB pairs yet."
-            isi="synt reads BNB positions from launch trades. Buyers still holding after the first 2 minutes, and the largest buyer's share, are in Token facts."
-          />
+        // P-7 (§8, 22 Nov): dari event Transfer (synt-dash /api/bnb/holders); template = contoh → keadaan kosong lama
+        isi: contoh ? (
+          <TabKosong judul="Top holders are listed on live pairs." isi="This sample page has no holder list." />
+        ) : (
+          <BnbHolders token={d.token} />
         ),
       },
       // 3 Nov: posisi & riwayat NYATA dari trade akun 0x lewat synt (non-custodial)

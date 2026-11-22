@@ -997,6 +997,8 @@
 .tv-tab-skel { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-5); }
 .tv-tab-skel .sk { height: 20px; }
 .cd .tv-tab-stale { margin: 0 var(--sp-5) var(--sp-4); }
+/* P-7 (22 Nov): catatan sumber/keadaan di bawah tab holder BNB */
+.cd .tv-tab-note { margin: var(--sp-3) var(--sp-5) var(--sp-4); font-size: var(--fs-base); color: var(--mute-2); max-width: 72ch; }
 
 /* ── Kepala lengket (ponsel, fungsi lab A4) ── */
 .tv-sticky { display: none; }
