@@ -11,6 +11,7 @@ import { alamatPendek, umur } from '@/lib/format'
 import { alamatMint } from '@/lib/mint'
 import { useCopy } from '@/lib/useCopy'
 import '@/features/trenches/TrenchesTable.css'
+import { RiwayatSwap } from './RiwayatSwap'
 import './Wallet.css'
 
 /**
@@ -106,8 +107,8 @@ export function WalletLookup({ addr }: { addr?: string }) {
         <header className="wt-head">
           <h1 className="wp-title">Wallet tracker</h1>
           <p className="wp-sub">
-            Look up a Solana wallet and see what the synt engine has recorded about it: tokens it launched, and
-            pairs where it was a top holder when synt audited them.
+            Look up a Solana wallet: its recent buys and sells with synt&apos;s score for each token, tokens it launched,
+            and pairs where it was a top holder when synt audited them.
           </p>
           <WalletForm initial={target} />
         </header>
@@ -198,6 +199,7 @@ function IsiHasil({ addr, st, ulang }: { addr: string; st: Keadaan; ulang: () =>
   }
   if (st.k !== 'ok') {
     return (
+      <>
       <div className="wt-state" role="alert">
         <p>
           {st.k === 'unavailable'
@@ -206,6 +208,9 @@ function IsiHasil({ addr, st, ulang }: { addr: string; st: Keadaan; ulang: () =>
         </p>
         <button type="button" className="wt-retry" onClick={ulang}>Try again</button>
       </div>
+      {/* riwayat swap dibaca dari rantai, tak bergantung DB mesin → tetap tampil */}
+      <RiwayatSwap addr={addr} />
+      </>
     )
   }
 
@@ -214,6 +219,7 @@ function IsiHasil({ addr, st, ulang }: { addr: string; st: Keadaan; ulang: () =>
   return (
     <>
       <Ringkasan d={d} />
+      <RiwayatSwap addr={addr} />
       {kosong && (
         <p className="wt-state">
           synt has no record of this wallet. It did not launch a token synt detected, and it was not among the top{' '}
@@ -310,11 +316,15 @@ function Cakupan({ sejak, topN = 20 }: { sejak: string | null; topN?: number }) 
           pair{t ? `, since ${t}` : ''}. Only pairs that reached the audit stage are covered, and only the top {topN}.
         </li>
         <li><b>Wallet facts:</b> its portfolio as last seen during an audit.</li>
+        <li>
+          <b>Recent swaps:</b> buys and sells against SOL in its latest transactions, read from the chain when you look
+          it up. Only that recent window, not its full history.
+        </li>
       </ul>
       <p className="wt-scope-not">
-        <b>Not shown:</b> trades, buys and sells, or profit and loss. synt does not keep a trade history per wallet,
-        so this is not a record of everything this wallet did. Outcomes describe how each token did after launch,
-        not intent, and do not measure how accurate its score was.
+        <b>Not shown:</b> profit and loss. Net SOL leaves out tokens still held, fees and account rent, so it is not a
+        record of everything this wallet did. Outcomes describe how each token did after launch, not intent, and do not
+        measure how accurate its score was.
       </p>
     </div>
   )

@@ -6,6 +6,8 @@ import type {
 } from '@/api/types'
 import type { CoinDetail, Candle, Holder, ScoreFactor, ScorePoint, Swap } from './detail'
 import { alamatPendek, umur } from '@/lib/format'
+import { tingkat, type Sinyal } from '@/features/risk/ambang'
+import { bobotTampilan } from '@/features/risk/bobotTampilan'
 import { buktiPumpMesin, judulLaunchpad, launchpadTampil, likuiditasUsd, pasarPascaLulusBelumDimuat, sejakLaunchTakTercatat } from './labels'
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -59,30 +61,32 @@ export function kursSolUsd(): number | null {
 function faktor(r: ApiToken['risk']): ScoreFactor[] {
   const out: ScoreFactor[] = []
 
+  // ⭐ 22 Nov: ambang dari tabel bersama `features/risk/ambang.ts` (sama dgn Trenches & Token facts). Waspada = ikut
+  // ditandai (Trenches juga menurunkannya), bobot lebih kecil dari berat.
   const tambah = (
     id: string,
     label: string,
     nilai: number | null,
-    burukDi: number,
+    sinyal: Sinyal,
     kalimat: (v: number) => string,
   ) => {
     if (nilai === null) return
-    const buruk = nilai >= burukDi
+    const t = tingkat(sinyal, nilai)
     out.push({
       id,
       label,
       // ⚠️ Bobot ini TAMPILAN, bukan kontribusi sebenarnya ke skor. Arahnya
       // mengikuti temuan terukur, jadi tak menyesatkan meski besarannya bukan
       // angka mesin.
-      weight: buruk ? -10 : 5,
+      weight: bobotTampilan(t),
       detail: kalimat(nilai),
-      passed: !buruk,
+      passed: t === 'aman',
     })
   }
 
-  tambah('top10', 'Top 10 concentration', r.top10_pct, 95, (v) =>
+  tambah('top10', 'Top 10 concentration', r.top10_pct, 'top10', (v) =>
     `The ten largest wallets hold ${v.toFixed(1)}% of supply.`)
-  tambah('dev', 'Creator holding', r.dev_pct === null ? null : Math.max(0, r.dev_pct), 20, (v) =>
+  tambah('dev', 'Creator holding', r.dev_pct === null ? null : Math.max(0, r.dev_pct), 'dev', (v) =>
     `The creator holds ${v.toFixed(1)}% of supply.`)
   // Rata terukur: rug 11,6 · winner 5,6.
   // ⛔ DISEMBUNYIKAN 2026-10-22: same_slot_tx SELALU 0 sejak pengukurnya dicabut 2026-09-02 → "0 purchases landed in the
@@ -93,14 +97,14 @@ function faktor(r: ApiToken['risk']): ScoreFactor[] {
     'conc',
     'Buyer concentration',
     r.wallet_diversity === null ? null : r.wallet_diversity * 100,
-    45,
+    'konsentrasi',
     (v) => `Buying is ${v.toFixed(0)}% concentrated among repeat wallets.`,
   )
   // Rata terukur: rug 7,33 · winner 2,46. ⚠️ HITUNGAN, bukan skor blacklist.
-  tambah('flag', 'Flagged wallets', r.blacklist_hits, 5, (v) =>
+  tambah('flag', 'Flagged wallets', r.blacklist_hits, 'tandai', (v) =>
     `${v} participating wallets appeared in earlier collapses.`)
-  tambah('gini', 'Ownership spread', r.gini === null ? null : r.gini * 100, 60, (v) =>
-    `Ownership inequality measures ${(v / 100).toFixed(2)} on a 0–1 scale.`)
+  // ⛔ 22 Nov: gini TAK lagi faktor (dulu ditandai ≥0,60 tanpa data terukur; Trenches tak pernah menandainya).
+  // Tetap tampil sbg konteks netral di Token facts (`adapt.ts` faktaDari).
 
   return out
 }
@@ -189,6 +193,8 @@ export function adaptCoinDetail(
     launchpadTitle: judulLaunchpad(a),
     // fakta: "Created 17m ago" (DESIGN §4.2: "ago" hanya di fakta)
     createdAgo: `${umur(a.age_secs)} ago`,
+    // P-8: waktu absolut utk popover "Created" = sekarang − umur pair (API tak mengirim stempel waktu) → PERKIRAAN
+    createdAtMs: Number.isFinite(a.age_secs) && a.age_secs >= 0 ? Date.now() - a.age_secs * 1000 : null,
     address: a.mint,
     socials: {
       website: a.socials.website ?? undefined,
@@ -222,6 +228,7 @@ export function adaptCoinDetail(
        padahal artinya 19 akun teratas yang diperiksa. 0 → UI menulis "—". */
     holders: a.holders ?? 0,
     top10Pct: a.risk.top10_pct ?? null,
+    gini: a.risk.gini ?? null,
     pumpBukti,
 
     graduationPct: a.graduation_pct ?? 0,
@@ -239,9 +246,12 @@ export function adaptCoinDetail(
     //
     // ⛔ Versi lama membaca `a.tier`, padahal API mengirim `tier_lama` sejak
     // 2026-10-04 — SETIAP token tampil "Not scored yet" + "0% collapsed".
+    /* ⭐ P-6 (§8, 22 Nov): status kartu skor = pola BNB "N of M checks passed" (dulu kata "Few flags" dari ambang
+       checks ≥ 5 / ≥ 3). Angka `checks` & `checks_max` apa adanya dari server; skor & base rate tak tersentuh. */
     scoreLabel:
-      a.checks == null ? 'Not scored yet'
-        : a.checks >= 5 ? 'Few flags' : a.checks >= 3 ? 'Some flags' : 'Many flags',
+      // Review 22 Nov: "health checks" = 6 cek skor mesin (skor_sehat), BUKAN daftar faktor tampilan di bawahnya —
+      // kata yang sama dgn tabel rekam jejak publik ("Health checks passed"), agar tak dibaca sbg kontradiksi.
+      a.checks == null ? 'Not scored yet' : `${a.checks} of ${a.checks_max ?? 6} health checks passed`,
     // ⛔ Base rate WAJIB menempel pada skor (PRODUK.md §0) — tapi hanya bila
     // skornya ADA. Menampilkan "0% collapsed" pada token tak berskor
     // membacakan jaminan yang tak pernah dihitung.

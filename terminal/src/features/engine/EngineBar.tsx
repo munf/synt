@@ -177,7 +177,7 @@ const INFO_DISCOVERED = 'New pairs the engine detected since the current engine 
 
 /* A2: `Metric` & `Stat` lokal dihapus → komponen bersama `@/components/Metric` (varian `inline` & `stat`). */
 
-function ChevronIcon({ flipped }: { flipped: boolean }) {
+export function ChevronIcon({ flipped }: { flipped: boolean }) {
   return (
     <svg
       viewBox="0 0 10 6"

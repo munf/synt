@@ -57,6 +57,11 @@ pub struct AppState {
     pub rem_dagang: Arc<Rem>,
     /// trading: saldo & posisi (tiap panggilan = RPC berbayar) per IP
     pub rem_baca_dagang: Arc<Rem>,
+    /// riwayat swap wallet (22 Nov): tiap pencarian = ±50 panggilan RPC berbayar → per IP & seluruh layanan
+    pub rem_dompet: Arc<Rem>,
+    pub rem_dompet_global: Arc<Rem>,
+    /// API publik synt-dash (skor token) — sama dgn pemantau
+    pub dash: Arc<String>,
     /// tiket support per IP & seluruh layanan (4 Nov)
     pub rem_tiket: Arc<Rem>,
     pub rem_tiket_global: Arc<Rem>,

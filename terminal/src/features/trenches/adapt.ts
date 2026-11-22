@@ -2,6 +2,7 @@ import { gambarToken } from '@/components/Avatar'
 import type { TrenchItem } from '@/api/types'
 import type { TrenchRow, RiskFactor } from './types'
 import { likuiditasUsd, pasarPascaLulusBelumDimuat } from '@/features/token/labels'
+import { tingkat, type Tingkat } from '@/features/risk/ambang'
 
 /* ─────────────────────────────────────────────────────────────────────────
    Jembatan API → bentuk yang dipakai tabel.
@@ -46,17 +47,22 @@ export function setSolUsd(v: number | null | undefined) {
  * Arahnya (positif/negatif) mengikuti temuan terukur, jadi ia tak menyesatkan
  * meski besarannya bukan angka mesin.
  */
+// ⭐ 22 Nov: ambang dari tabel bersama `features/risk/ambang.ts`; besaran bobot tetap di sini (tampilan saja).
+const BOBOT_DEV: Record<Tingkat, number> = { aman: 0, waspada: -4, berat: -10 }
+const BOBOT_TANDAI: Record<Tingkat, number> = { aman: 0, waspada: -5, berat: -10 }
+const BOBOT_KONSENTRASI: Record<Tingkat, number> = { aman: 0, waspada: -4, berat: -8 }
+
 function bobot(kind: RiskFactor['kind'], pct: number): number {
   switch (kind) {
     // ⛔ Terukur: top10 TINGGI justru lebih sering pada winner (29,18 vs rug
     // 20,32 — jebakan #29). Jadi tak ditandai buruk hanya karena tinggi;
     // hanya ekstremnya yang berarti.
     case 'holders':
-      return pct >= 95 ? -8 : 0
+      return tingkat('top10', pct) === 'berat' ? -8 : 0
 
     // Rata terukur: rug 0,93 · winner 0,44 · survive 0,23.
     case 'devHolding':
-      return pct >= 20 ? -10 : pct >= 5 ? -4 : 0
+      return BOBOT_DEV[tingkat('dev', pct)]
 
     // ⭐⭐ `same_slot_tx` — HITUNGAN transaksi dalam satu slot, bukan persen.
     //
@@ -77,12 +83,12 @@ function bobot(kind: RiskFactor['kind'], pct: number): number {
     // ⚠️ HITUNGAN wallet, bukan skornya: skor blacklist berkorelasi TERBALIK
     // (winner 32 vs rug 18) karena menandai wallet infrastruktur (jebakan #19).
     case 'blacklist':
-      return pct >= 8 ? -10 : pct >= 5 ? -5 : 0
+      return BOBOT_TANDAI[tingkat('tandai', pct)]
 
     // Keragaman wallet 0-100. ⚠️ Arahnya TERBALIK dari namanya: tinggi =
     // terkonsentrasi. Rata terukur: rug 0,641 · winner 0,243.
     case 'insiders':
-      return pct >= 60 ? -8 : pct >= 45 ? -4 : 0
+      return BOBOT_KONSENTRASI[tingkat('konsentrasi', pct)]
 
     default:
       return 0

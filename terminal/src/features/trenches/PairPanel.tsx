@@ -5,11 +5,12 @@ import { Avatar } from '@/components/Avatar'
 import { StatusChip } from '@/components/StatusChip'
 import { ScoreSpark } from '@/components/ScoreCell'
 import { InfoPopover } from '@/components/Popover'
-import { alamatPendek, pct, trendClass, uang, umur } from '@/lib/format'
+import { alamatPendek, kelasBobot, pct, teksBobot, teksHasil, trendClass, uang, umur } from '@/lib/format'
 import { useWatchlist } from '@/lib/useWatchlist'
 import { useCopy } from '@/lib/useCopy'
 import type { TokenDetail } from '@/features/token/types'
-import { hitung, rate, type Num, type PairModel, type Tag } from './pairModel'
+import { frasaJendela, hitung, rate, type Num, type PairModel, type Tag } from './pairModel'
+import { BuyOff } from './PairTable'
 import './PairPanel.css'
 
 /**
@@ -18,9 +19,11 @@ import './PairPanel.css'
  *   (1) InfoCard: avatar 48 + simbol + umur, chip alamat + salin, ikon ✓ ☆ bagikan, Buy putih, harga 30px bernol
  *       subskrip + pil Δ "since launch", empat tile terpisah (LIQUIDITY / MARKET CAP / HOLDERS / BUY/SELL),
  *       kaki "SOLANA · More Info" (fakta + tautan explorer & audit penuh).
- *   (2) AuditCard: "SYNT AUDIT" + baris base rate + cincin skor, bar FLOW / DEVELOPER, WHY THIS SCORE, jendela skor.
- * Slot khusus BNB digambar dgn gaya yang sama (§0.2/0.3): tag Name reused / Creator-filled / Tax = chip di bawah
- * kepala, Provisional & outcome = chip di kartu audit, empat sinyal = grid bar, laci kalibrasi = tautan di kaki.
+ *   (2) AuditCard: "SYNT AUDIT" + baris base rate + cincin skor, DAFTAR FAKTOR (label · hasil di kanan), WHY THIS
+ *       SCORE, jendela skor. ⭐ T-8 (§8, 22 Nov): satu anatomi kedua chain — SOL hasil = bobot faktor, BNB = Pass/Flag;
+ *       FLOW / DEVELOPER SOL (dulu dua bar) jadi satu baris ringkasan di atas daftar; grid 2×2 sinyal BNB dilepas.
+ * Slot khusus BNB digambar dgn gaya yang sama (§0.2/0.3): tag Name reused / Creator-filled / Tax = chip sebaris umur,
+ * Provisional & outcome = chip di kartu audit, laci kalibrasi = tautan di kaki.
  *
  * Data: model baris (`PairModel`, angka sama persis dgn tabel di sebelahnya) + opsional `detail` (SOL, `/api/token`
  * lewat `adaptToken`) utk bar FLOW/DEVELOPER & fakta "More Info". Warna cincin = nada base rate (§0.5 / 6.1-2).
@@ -77,13 +80,15 @@ function Nilai({ n, text, label }: { n: Num; text: string; label: string }) {
   return n.info ? <InfoPopover info={n.info} label={label}>{text}</InfoPopover> : <>{text}</>
 }
 
+/** T-6 (22 Nov): tag (launchpad, pajak, peringatan) SEBARIS dgn umur di kepala kedua chain (dulu baris sendiri BNB
+    saja → harga panel BNB 32 px lebih rendah dari SOL). */
 function Tags({ tags }: { tags: Tag[] }) {
   return (
-    <div className="pp-tags">
+    <>
       {tags.map((t) => (
         <StatusChip key={t.label} label={t.label} tone={t.tone === 'warn' ? 'warn' : 'neutral'} info={t.info} />
       ))}
-    </div>
+    </>
   )
 }
 
@@ -94,6 +99,8 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
   const watched = watchlist.has(m.id)
   const sol = m.chain === 'sol'
   const p2 = m.tags.find((t) => t.tone === 'warn' && sol)
+  // label P2 SOL sudah tampil di samping harga → tak diulang di baris tag
+  const tagKepala = m.tags.filter((t) => t !== p2)
 
   // Web Share API tak ada di semua browser desktop → jatuh ke salin tautan
   const share = async () => {
@@ -112,7 +119,8 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
   const liq = m.curveFunds ?? m.liq
   const tiles: Array<{ label: string; note?: string; node: React.ReactNode }> = [
     // U22: SOL = sisi SOL saja (padanan BNB "Curve funds (one side)")
-    { label: m.curveFunds ? 'Curve funds' : 'Liquidity', note: m.curveFunds ? '(one side)' : m.chain === 'sol' ? '(SOL side)' : undefined, node: <Nilai n={liq} text={uang(liq.v)} label="Liquidity" /> },
+    // T-7 (22 Nov): BNB lulus = "(both sides)" (K2: 2× sisi quote), penjelasnya di popover nilai (`liq.info`)
+    { label: m.curveFunds ? 'Curve funds' : 'Liquidity', note: m.curveFunds ? '(one side)' : m.chain === 'sol' ? '(SOL side)' : '(both sides)', node: <Nilai n={liq} text={uang(liq.v)} label="Liquidity" /> },
     { label: 'Market cap', node: <Nilai n={m.mcap} text={uang(m.mcap.v)} label="Market cap" /> },
     {
       label: m.holders.label,
@@ -143,18 +151,20 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
 
   return (
     <section className="pp-card" aria-label={`${m.symbol} market`}>
+      {/* T-6: kepala = grid (avatar · simbol · alamat / umur + tag selebar simbol+alamat) */}
       <header className="pp-head">
-        <Link to={m.href} aria-label={`Open ${m.symbol} audit`}>
+        <Link to={m.href} className="pp-av" aria-label={`Open ${m.symbol} audit`}>
           <Avatar name={m.symbol} src={m.image} size={48} />
         </Link>
-        <div className="pp-head-id">
-          <div className="pp-head-title">
-            <Link to={m.href} className="pp-symbol" title={m.name && m.name !== m.symbol ? m.name : undefined}>
-              {m.symbol}
-            </Link>
-            {badges}
-          </div>
-          <p className="pp-meta">{m.ageSecs === null ? 'Age not reported' : `${umur(m.ageSecs)} old`}</p>
+        <div className="pp-head-title">
+          <Link to={m.href} className="pp-symbol" title={m.name && m.name !== m.symbol ? m.name : undefined}>
+            {m.symbol}
+          </Link>
+          {badges}
+        </div>
+        <div className="pp-meta">
+          <span>{m.ageSecs === null ? 'Age not reported' : `${umur(m.ageSecs)} old`}</span>
+          <Tags tags={tagKepala} />
         </div>
         <button
           type="button"
@@ -166,8 +176,6 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
           <CopyIcon />
         </button>
       </header>
-
-      {!sol && m.tags.length > 0 && <Tags tags={m.tags} />}
 
       <div className="pp-actions">
         <div className="pp-icon-row">
@@ -190,7 +198,7 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
             <ShareIcon />
           </button>
         </div>
-        {m.buy && <QuickBuy mint={m.address} symbol={m.symbol} className="pp-buy" chain={m.chain} />}
+        {m.buy ? <QuickBuy mint={m.address} symbol={m.symbol} className="pp-buy" chain={m.chain} /> : m.buyWhy && <BuyOff why={m.buyWhy} symbol={m.symbol} cls="pp-buy" />}
       </div>
 
       <div className="pp-price">
@@ -202,7 +210,10 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
         {m.change.v !== null && (
           <>
             <span className={`pp-price-delta ${trendClass(m.change.v)}`}>{pct(m.change.v)}</span>
-            <span className="pp-price-since">{m.chain === 'sol' ? m.change.label : `in ${m.change.label}`}</span>
+            {/* T-2: jendela dari token yang sama dgn sel MC tabel; penjelasnya di popover */}
+            <span className="pp-price-since">
+              {m.change.info ? <InfoPopover info={m.change.info} label="Price change window">{frasaJendela(m.change.label)}</InfoPopover> : frasaJendela(m.change.label)}
+            </span>
           </>
         )}
       </div>
@@ -250,11 +261,56 @@ function InfoCard({ m, d, badges }: { m: PairModel; d: TokenDetail | null; badge
   )
 }
 
-/* ⛔ Bar SOL = dua kelompok sinyal menurut SUMBER (preview); deskripsi sengaja umum (tak membocorkan `reasons`). */
-const BAR_SOL: Array<['flow' | 'developer', string, string]> = [
+/* ⛔ Ringkasan SOL = dua kelompok sinyal menurut SUMBER (preview); deskripsi sengaja umum (tak membocorkan `reasons`). */
+const RINGKAS_SOL: Array<['flow' | 'developer', string, string]> = [
   ['flow', 'Flow', 'Weight based on transaction'],
   ['developer', 'Developer', 'Weight based on creator history'],
 ]
+
+/** T-8: baris ringkasan FLOW / DEVELOPER (0-100, ringkasan tampilan `adapt.ts`, angka tak berubah) di atas daftar. */
+function RingkasanSol({ d }: { d: TokenDetail | null }) {
+  return (
+    <p className="pp-sum">
+      {RINGKAS_SOL.map(([k, label, desc]) => {
+        const v = d ? d.breakdown[k] : null
+        const info = `${desc}, a 0 to 100 summary of the audit data.${v === null && d ? ' Not measured for this pair.' : ''}`
+        return (
+          <span key={k} className="pp-sum-item">
+            <InfoPopover info={info} label={label}><span className="pp-sum-label">{label}</span></InfoPopover>
+            <span className="pp-sum-value">{v === null ? '—' : v}</span>
+          </span>
+        )
+      })}
+    </p>
+  )
+}
+
+/**
+ * T-8: daftar faktor panel (label · hasil di kanan), satu anatomi kedua chain. SOL: kalimat faktor + bobot; baris
+ * konteks (gini) = "Context". BNB: judul sinyal + Pass/Flag, kalimat mesin di bawahnya.
+ */
+function DaftarFaktorPanel({ m }: { m: PairModel }) {
+  if (!m.reasonsFull.length) return null
+  const bnb = m.chain === 'bnb'
+  return (
+    <ul className="pp-factors" aria-label="Score factors">
+      {m.reasonsFull.map((r) => {
+        const [teks, cls] = r.weight !== undefined
+          ? [teksBobot(r.weight), kelasBobot(r.weight)]
+          : r.context
+            ? ['Context', 'is-flat']
+            : [teksHasil(r.bad), r.bad === true ? 'is-down' : r.bad === false ? 'is-up' : 'is-flat']
+        return (
+          <li key={r.short} className="pp-factor">
+            <span className="pp-factor-label">{bnb ? r.short : r.full}</span>
+            <span className={`pp-factor-value ${cls}`}>{teks}</span>
+            {bnb && <span className="pp-factor-desc">{r.full}</span>}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
 function AuditCard({ m, d, onCalibration, ringkas = false }: { m: PairModel; d: TokenDetail | null; onCalibration?: () => void; ringkas?: boolean }) {
   const s = m.score
@@ -293,41 +349,11 @@ function AuditCard({ m, d, onCalibration, ringkas = false }: { m: PairModel; d: 
         <ScoreRing m={m} />
       </header>
 
-      {bnb ? (
-        m.reasonsFull.length > 0 && (
-          <div className="pp-bars">
-            {m.reasonsFull.map((r) => (
-              <div key={r.short} className="pp-bar">
-                <div className="pp-bar-head">
-                  <span className="pp-bar-label">{r.short}</span>
-                  <span className={`pp-bar-value ${r.bad === true ? 'is-down' : r.bad === false ? 'is-up' : ''}`}>
-                    {r.bad === true ? 'Flag' : r.bad === false ? 'Pass' : '—'}
-                  </span>
-                </div>
-                <p className="pp-bar-desc">{r.full}</p>
-              </div>
-            ))}
-          </div>
-        )
-      ) : (
-        <div className="pp-bars">
-          {BAR_SOL.map(([k, label, desc]) => {
-            const v = d ? d.breakdown[k] : null
-            return (
-              <div key={k} className="pp-bar">
-                <div className="pp-bar-head">
-                  <span className="pp-bar-label">{label}</span>
-                  <span className="pp-bar-value">{v === null ? '—' : v}</span>
-                </div>
-                <p className="pp-bar-desc">{v === null && d ? 'Not measured' : desc}</p>
-                <div className="pp-bar-track" role="meter" aria-valuenow={v ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-                  {v !== null && <span className="pp-bar-fill" style={{ width: `${v}%` }} />}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* T-8: ringkasan SOL → daftar faktor (kedua chain) */}
+      <div className="pp-audit-list">
+        {!bnb && <RingkasanSol d={d} />}
+        <DaftarFaktorPanel m={m} />
+      </div>
 
       <div className="pp-why">
         {!bnb && (

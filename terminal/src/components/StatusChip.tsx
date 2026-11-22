@@ -47,7 +47,8 @@ export function StatusChip({
 /* ── Chip yang sama di kedua chain (K2 menyediakan datanya; kini hanya Graduated yang punya sumber) ── */
 
 export function GraduatedChip() {
-  return <StatusChip label="Graduated" tone="ok" variant="outline" info="Left the bonding curve for a DEX pair." />
+  // P-3 (§8, 22 Nov): NETRAL di kedua chain (dulu "ok" hijau-lime); lulus = keadaan pasar, bukan sinyal baik
+  return <StatusChip label="Graduated" tone="neutral" variant="outline" info="Left the bonding curve for a DEX pair." />
 }
 
 /** K2: flag self-graduation (creator mengisi kurva sendiri). Belum ada di API: dirender hanya bila datanya ada. */

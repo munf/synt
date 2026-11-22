@@ -173,8 +173,9 @@ export function PrivasiEn() {
         </li>
         <li>
           <strong>Blockchain data providers (RPC services)</strong>: receive token and wallet addresses to return public
-          on-chain data, and the transactions you sign so they reach the network. They never receive your account or
-          profile.
+          on-chain data, and the transactions you sign so they reach the network. Where synt builds a Solana trade directly, it is
+          also sent through a transaction relay (currently Helius Sender), which receives only the signed transaction. They never receive
+          your account or profile.
         </li>
         <li>
           <strong>Jupiter</strong> (swap router): receives your wallet address, the token and the amount to build a
@@ -422,8 +423,9 @@ export function PrivasiId() {
         </li>
         <li>
           <strong>Penyedia data blockchain (layanan RPC)</strong>: menerima alamat token dan wallet untuk mengembalikan
-          data on-chain publik, serta transaksi yang Anda tanda tangani supaya sampai ke jaringan. Mereka tidak pernah
-          menerima akun atau profil Anda.
+          data on-chain publik, serta transaksi yang Anda tanda tangani supaya sampai ke jaringan. Transaksi Solana
+          yang disusun langsung oleh synt juga dikirim lewat relay transaksi (saat ini Helius Sender), yang hanya menerima transaksi bertanda tangan.
+          Mereka tidak pernah menerima akun atau profil Anda.
         </li>
         <li>
           <strong>Jupiter</strong> (router swap): menerima alamat wallet, token dan jumlah untuk menyusun rute dan

@@ -96,10 +96,7 @@
 .pt-sort:hover .pt-sort-i, .pt-sort:focus-visible .pt-sort-i { visibility: visible; }
 .pt-sort.is-active .pt-sort-i { color: var(--ink); }
 
-/* U10: "Δ launch" di kepala MC SOL = pemicu popover (teks kepala redup, garis titik-titik bawaan pemicu). Di kolom MC
-   sempit (68 px, ponsel) turun ke bawah "MC" lewat lipatan kepala `is-sempit` yang sudah ada. */
-.ip-trigger.pt-hk { font-weight: var(--fw-medium); color: var(--mute-2); white-space: nowrap; }
-.ip-trigger.pt-hk:hover, .ip-trigger.pt-hk[aria-expanded='true'] { color: var(--mute); }
+/* U10 "Δ launch" di kepala MC SOL dilepas (T-2, 22 Nov): jendela Δ kini di tiap sel kedua chain. */
 
 /* U18: "Climbed" (jalur skor umum) = teks redup, bukan chip; Held/Fell tetap chip. Setinggi chip agar baris tak lompat. */
 .ip-trigger.pt-path-dim { color: var(--mute-2); font-size: var(--fs-sm); line-height: var(--chip-h, 20px); white-space: nowrap; }
@@ -108,6 +105,8 @@
 
 /* chip Provisional (BNB) di kepala Score */
 .ip-trigger.pt-prov-t { text-decoration: none; }
+/* T-9: mode sempit → ikon "?" di samping "SCORE" (kepala tetap satu baris) */
+.ip-trigger.pt-prov-q { width: 14px; height: 14px; vertical-align: 0; }
 .pt-prov {
   padding: 0 var(--sp-2);
   border: 1px solid var(--line);
@@ -187,6 +186,11 @@
 }
 .pt-stack { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; }
 .pt-delta { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
+/* T-2 (22 Nov): Δ + jendela ("−52.0% launch"). Mode sempit (ponsel): baris Δ 11 px & melipat di spasi sebelum jendela
+   HANYA bila tak muat (Δ ≥ 4 digit, jarang), bukan meluap ke base rate SCORE yang rapat di kirinya. Layar lebar tetap
+   satu baris (Δ 4 digit boleh masuk ke jarak antar-kolom 12 px; kolom kirinya rata kiri). */
+.pt.is-sempit .pt-num .pt-delta { white-space: normal; font-size: var(--fs-sm); }
+.pt.is-sempit .pt-delta-w { font-size: var(--fs-sm); }
 .pt-delta-w { font-family: var(--font-sans); font-weight: var(--fw-normal); color: var(--mute); }
 .pt .is-up { color: var(--up); }
 .pt .is-down { color: var(--down); }
@@ -274,6 +278,8 @@
 /* T1: BNB tanpa skor (Quiet / Scoring at 2m) dlm anatomi sel skor: keadaan di baris pertama base rate + ikon "?" */
 .pt-score-state { display: inline-flex; align-items: center; color: var(--dim-2); }
 .pt-score.is-empty .ip-trigger.ip-q { width: 14px; height: 14px; vertical-align: 0; }
+/* T-9: keadaan kosong satu baris di mode sempit (tanpa slot angka) */
+.pt.is-sempit .pt-score.is-satu .pt-score-base { white-space: nowrap; }
 .pt .tt-spark { width: 84px; height: 22px; }
 .pt .tt-spark path { fill: none; stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .pt .tt-spark path.is-up { stroke: var(--up); }
@@ -347,6 +353,13 @@
 }
 .pt-buy:hover { border-color: var(--accent); color: var(--accent); }
 .pt-buy:active { transform: translateY(1px); }
+/* T-4 (22 Nov): Buy nonaktif (pair BNB ber-quote non-BNB) = slot sama, redup; pemicu popover membungkus span bergaya
+   tombol. Ketuk = sebabnya, bukan transaksi. */
+.ip-trigger.pt-buy-off-t { display: flex; width: 100%; text-decoration: none; cursor: help; }
+.pt-buy.is-off { color: var(--mute-2); background: transparent; border-style: dashed; cursor: help; }
+.pt-buy-off-t:hover .pt-buy.is-off,
+.pt-buy-off-t[aria-expanded='true'] .pt-buy.is-off { border-color: var(--line-strong); color: var(--mute); }
+.pt-buy-off-t:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-md); }
 
 /* ── baris dibuka (preview ExpandPanel) ── */
 .pt-item { border-radius: var(--r-md); transition: background-color var(--dur-fast) var(--ease); min-width: var(--pt-min-w, var(--tt-min-w)); }

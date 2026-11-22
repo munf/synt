@@ -35,12 +35,12 @@ function bahasaAwal(): Bahasa {
 const TEKS = {
   en: {
     draf: 'Draft for review. This document is not yet in effect.',
-    diperbarui: 'Last updated 10 November 2026',
+    diperbarui: 'Last updated 22 November 2026',
     pilih: 'Language',
   },
   id: {
     draf: 'Draf untuk ditinjau. Dokumen ini belum berlaku.',
-    diperbarui: 'Terakhir diperbarui 10 November 2026',
+    diperbarui: 'Terakhir diperbarui 22 November 2026',
     pilih: 'Bahasa',
   },
 } as const

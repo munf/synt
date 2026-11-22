@@ -23,6 +23,7 @@ import { useBnbCalibration, useBnbTrenches, type BnbView } from '@/features/bnb/
 import { hariKalibrasi } from '@/features/bnb/bnbFormat'
 import { CalibrationCard, SampleNote, SampleTag } from '@/features/bnb/BnbParts'
 import { umur } from '@/lib/format'
+import { InfoPopover } from '@/components/Popover'
 import { PairToolbar } from '@/features/trenches/PairToolbar'
 import { adaptToken, setSolUsd as setSolUsdToken } from '@/features/token/adapt'
 import type { TokenDetail } from '@/features/token/types'
@@ -419,7 +420,7 @@ function Body({
   total: number
   state: 'loading' | 'error' | 'missing' | 'ok'
   emptyText: React.ReactNode
-  foot: string | null
+  foot: React.ReactNode
   source?: string
   /** `ringkas` = tabel dlm mode sempit (U26b putaran 2). */
   renderPanel: (m: PairModel, ringkas: boolean) => React.ReactNode
@@ -603,12 +604,27 @@ function BnbBody(props: BodyCommon & { view: BnbView; cocok: (s: string, a: stri
     : null
   const computed = feed.kind === 'live' ? Date.parse(feed.data.computed_at) : NaN
   const n = items.length
+  /* ⭐ T-10 (22 Nov): susunan SOL (satu klausa jumlah + jendela kiri, sumber kanan, satu baris di 1440). Kalimat syarat
+     yang dulu ikut di sini (pair tanpa pembeli luar dibuang / dinilai menit 2) tetap ada lewat ikon "?" sesudahnya (teks jumlah polos spt SOL). */
   const foot =
-    feed.kind === 'live' || feed.kind === 'contoh'
-      ? view === 'new'
-        ? `${n} ${n === 1 ? 'launch' : 'launches'} from the last 6 hours, newest first. Launches with no outside buyer by minute 2 are left out.`
-        : `${n} graduated ${n === 1 ? 'pair' : 'pairs'}, most recent graduation first. Scored at minute 2, outcome after a 90 minute window.`
-      : null
+    feed.kind === 'live' || feed.kind === 'contoh' ? (
+      <>
+        {view === 'new'
+          ? `${n} ${n === 1 ? 'launch' : 'launches'} detected in the last 6 hours`
+          : `${n} graduated ${n === 1 ? 'pair' : 'pairs'} that left the bonding curve`}
+        <InfoPopover
+          label="Which pairs are listed"
+          className="ip-q"
+          info={
+            view === 'new'
+              ? 'Newest first. Launches with no outside buyer by minute 2 are left out.'
+              : 'Most recent graduation first. Pairs are scored at minute 2, with an outcome after a 90 minute window.'
+          }
+        >
+          ?
+        </InfoPopover>
+      </>
+    ) : null
 
   return (
     <Body

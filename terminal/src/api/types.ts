@@ -637,6 +637,10 @@ export interface BnbTokenDetail extends BnbTrenchItem {
   /** 'USD' atau simbol quote (mis. 'CAKE') — label sumbu chart mengikutinya. */
   candle_unit: string | null
   candles: BnbCandle[]
+  /** P-5 (synt-dash 22 Nov): waktu trade pertama yang synt rekam, epoch DETIK. Absen = server lama. */
+  first_trade_at?: number | null
+  /** P-5: harga kini vs harga trade pertama, persen. null = tak terukur (tanpa trade pertama / harga kini tak sah). */
+  change_since_first_pct?: number | null
 }
 
 /** Satu baris tabel kalibrasi: token dgn skor `score` → berapa yang runtuh / menang. Persen 0-100 atas `n`. */

@@ -54,14 +54,13 @@ html[data-panel='tutup'] .kr-tr .pt { --pt-cols: minmax(180px, 300px) 176px 92px
   html:not([data-panel='tutup']) .kr-tr .pt { --pt-cols: minmax(150px, 250px) 176px minmax(180px, 1fr) 92px; }
   html:not([data-panel='tutup']) .kr-tr .pt-row > :nth-child(4) { display: none; }
 }
-/* Kartu < 700 px dgn panel terbuka = mode sempit PairTable (U26b): TOKEN 1fr · SCORE 92 · MC 60, padding & jarak
-   --sp-3, avatar 30, TOP RISK & Buy di baris grid kedua, kepala dua baris ("MC / Δ LAUNCH"). BNB tanpa Δ launch: kepala
-   satu baris sampai kalibrasi tiba (chip Provisional) — sama dgn keadaan memuat React. */
+/* Kartu < 700 px dgn panel terbuka = mode sempit PairTable (U26b): TOKEN 1fr · SCORE 92 · MC 88 (T-2 22 Nov: kedua
+   chain menulis jendela Δ di sel), padding & jarak --sp-3, avatar 30, TOP RISK & Buy di baris grid kedua. Kepala satu
+   baris di kedua chain (T-2: "Δ launch" SOL dilepas; T-9: Provisional BNB = ikon "?") — sama dgn keadaan memuat React. */
 @media (max-width: 739px) {
-  html:not([data-panel='tutup']) .kr-tr .pt { --pt-cols: minmax(88px, 1fr) 92px 60px; --av-row: 30px; }
+  html:not([data-panel='tutup']) .kr-tr .pt { --pt-cols: minmax(74px, 1fr) 92px 88px; --av-row: 30px; }
   html:not([data-panel='tutup']) .kr-tr .pt-head,
   html:not([data-panel='tutup']) .kr-tr .pt-row { padding-inline: var(--sp-3); column-gap: var(--sp-3); }
-  html:not([data-panel='tutup']):not([data-chain='bnb']) .kr-tr .pt-head { min-height: 66px; }
   html:not([data-panel='tutup']) .kr-tr .pt-row { row-gap: var(--sp-3); }
   html:not([data-panel='tutup']) .kr-tr .pt-row > .pt-token { min-height: 40px; }
   html:not([data-panel='tutup']) .kr-tr .pt-row > :nth-child(4) { display: block; }

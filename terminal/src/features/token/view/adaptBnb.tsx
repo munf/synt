@@ -1,7 +1,7 @@
 import { Suspense, lazy } from 'react'
 import type { BnbCalibrationResponse, BnbTokenDetail } from '@/api/types'
 import { gambarToken } from '@/components/Avatar'
-import { StatusChip } from '@/components/StatusChip'
+import { GraduatedChip, StatusChip } from '@/components/StatusChip'
 import { alamatPendek, uang, umur } from '@/lib/format'
 import { TEMPLATE } from '@/lib/template'
 import { ChartGagal, ChartSkeleton } from '@/features/token/chart/ChartRingan'
@@ -29,6 +29,7 @@ import {
   tingkatBnb,
 } from '@/features/bnb/bnbFormat'
 import { BSCSCAN_ADDRESS, BSCSCAN_TOKEN } from '@/features/bnb/useBnb'
+import { frasaJendela } from '@/features/trenches/pairModel'
 import { PosisiToken } from '@/features/trade/Posisi'
 import { TradePanel } from '@/features/trade/TradePanel'
 import { DaftarFaktor, TabKosong, kelasDelta, teksPersen } from './TokenView'
@@ -123,7 +124,8 @@ export function modelBnb(d: BnbTokenK, o: {
       {q && qUpper !== 'BNB' && qUpper !== 'WBNB' && <StatusChip label={`Quote ${q}`} tone="neutral" variant="outline" info={teksQuote(d)} />}
       {pajak(d.tax_bps) && <StatusChip label={pajak(d.tax_bps)!} tone="neutral" variant="outline" info="Transfer tax set by the token contract." />}
       <StatusChip label={LAUNCHPAD[d.launchpad] ?? d.launchpad} tone="neutral" variant="outline" />
-      {d.graduated && <StatusChip label="Graduated" tone="ok" variant="outline" info="Left the bonding curve for a DEX pair." />}
+      {/* P-3 (§8): chip Graduated NETRAL (dulu lime "ok"), sama dgn SOL */}
+      {d.graduated && <GraduatedChip />}
     </span>
   )
 
@@ -137,7 +139,7 @@ export function modelBnb(d: BnbTokenK, o: {
   const hp = tandaHargaPair(d)
   const pc = d.price_change ?? null
   const whyDelta = 'Not measured: no recorded price at the start of this window, or the current price is not recent.'
-  const deltas = (
+  const jendela = (
     pc
       ? (['m5', 'h1', 'h24'] as const).map((k, i) => ({ label: ['5m', '1h', '24h'][i]!, value: pc[k] ?? null, why: whyDelta }))
       : [{ label: '5m', value: null, why: 'Price change is not reported for this pair yet.' }, { label: '1h', value: null }, { label: '24h', value: null }]
@@ -146,9 +148,14 @@ export function modelBnb(d: BnbTokenK, o: {
     const muda = sebabJendelaMuda(x.label, d.age_secs)
     return muda ? { label: x.label, value: null, why: muda } : x
   })
-  // 24h utk kartu harga & tile kepala: hanya bila terukur DAN pair sudah berumur ≥ 24 jam (U3)
-  const muda24 = sebabJendelaMuda('24h', d.age_secs)
-  const h24 = !muda24 && pc?.h24 != null && Number.isFinite(pc.h24) ? pc.h24 : null
+  /* ⭐ P-5 (§8, synt-dash 22 Nov): sel pertama "Since first trade" = padanan "Since launch" SOL (harga kini vs harga
+     trade pertama yang synt rekam) → strip 4 sel di kedua chain. null → "—" + sebabnya. */
+  const sejak = sejakTradePertama(d)
+  const deltas = [sejak, ...jendela]
+  /* ⭐ P-2 (§8, = T-2 Trenches): Δ utama = jendela TERPANJANG yang terisi DAN muat dlm umur pair (gerbang U3 di atas),
+     jendelanya selalu ditulis. Tak ada yang terisi → tile berlabel "1h" (bawaan T-2) dgn sebab "—"-nya. */
+  const utama = [...jendela].reverse().find((x) => x.value !== null && Number.isFinite(x.value)) ?? null
+  const tileDelta = utama ?? jendela.find((x) => x.label === '1h')!
 
   const basi = hargaBasi(d)
   const liqSel = diKurva
@@ -183,38 +190,42 @@ export function modelBnb(d: BnbTokenK, o: {
       why: 'No trade price has been recorded for this pair yet.',
       title: basi ?? undefined,
       deltas,
-      utama: h24 !== null ? { label: '24h', value: h24 } : null,
+      // P-2: "+1.2% in 5m", frasa sama dgn panel Trenches (T-2 `frasaJendela`)
+      utama: utama ? { label: frasaJendela(utama.label), value: utama.value } : null,
     },
     /* R2: tile kepala ala preview. Slot SOL "Since launch / Net flow / Holders / Top 10" → padanan BNB yang terukur
-       (24h, Buyers, posisi di menit 2); tak terukur → "—" + sebab (DESIGN §4). */
+       (Δ jendela terpanjang P-2, Buyers, posisi di menit 2); tak terukur → "—" + sebab (DESIGN §4). */
     metrik: [
       { key: 'mc', label: 'Market cap', value: tandaUsd(d.mcap_usd), why: judulUsd(d, d.mcap_usd) ?? 'Market cap is not available for this pair yet.' },
-      // U17: > 1080 px harga besar kartu harga menggantikan tile ini, dan Δ 24h di sampingnya menggantikan tile 24h (hanya
-      // bila ada; "—" + sebab U3 tetap di tile)
+      // U17: > 1080 px harga besar kartu harga menggantikan tile ini, dan Δ utama di sampingnya menggantikan tile Δ
+      // (P-2: hanya bila ada, spt SOL "Since launch"; "—" + sebab tetap di tile)
       { key: 'price', label: 'Price', value: hp === '—' ? null : hp, why: 'No trade price has been recorded for this pair yet.', title: basi ?? undefined, hanyaSampai: 1080 },
       {
-        key: 'h24', label: '24h',
-        value: h24 !== null ? teksPersen(h24) : null,
-        tone: h24 !== null ? kelasDelta(h24) : undefined,
-        why: muda24 ?? (pc ? whyDelta : 'Price change is not reported for this pair yet.'),
-        ...(h24 !== null ? { hanyaSampai: 1080 as const } : {}),
+        key: 'delta', label: tileDelta.label,
+        value: utama ? teksPersen(utama.value!) : null,
+        tone: utama ? kelasDelta(utama.value!) : undefined,
+        why: tileDelta.why ?? 'Price change is not reported for this pair yet.',
+        ...(utama ? { hanyaSampai: 1080 as const } : {}),
       },
       { ...liqSel, label: diKurva ? 'Curve funds' : 'Liquidity' },
       // U17: catatan kartu harga lama "on the curve" pindah ke popover ketuk (tile kepala tanpa baris catatan)
       { key: 'buyers', label: 'Buyers', value: tandaAngka(d.buyers), title: 'Distinct wallets that bought on the curve.', why: 'Distinct buying wallets were not measured yet.' },
-      /* U4 (audit 7 Nov): label = label Token facts + popover ketuk pada angka. "Top buyer (2m) 99.8%" di sebelah tile
-         SOL "Top 10" (= % supply) terbaca sbg "satu wallet pegang 99,8% supply"; angka ini persen dari posisi bersih
-         pembeli di 2 menit pertama. Kalimat popover = baris Token facts (satu sumber, `INFO_*_120`). NBSP: "(first 2m)"
-         tak terbelah saat label terlipat. */
-      { key: 'h120', label: 'Buyers still holding (first\u00a02m)', value: tandaAngka(d.holders_120), title: INFO_HOLDERS_120, lipat: true, why: 'Buyers still holding after the first 2 minutes were not measured for this pair.' },
-      { key: 'top1', label: 'Top buyer’s share (first\u00a02m)', value: tandaPersen(d.top1_pct_120), title: INFO_TOP1_120, lipat: true, why: 'The largest buyer’s share in the first 2 minutes was not measured for this pair.' },
+      /* U4 (audit 7 Nov): "Top buyer (2m) 99.8%" di sebelah tile SOL "Top 10" (= % supply) terbaca sbg "satu wallet
+         pegang 99,8% supply"; angka ini persen dari posisi bersih pembeli di 2 menit pertama → penjelasnya di popover
+         ketuk pada angka (kalimat sama dgn baris Token facts, `INFO_*_120`).
+         ⭐ P-1 (§8, 22 Nov): label pendek SATU baris (dulu label Token facts yang melipat → kepala BNB 108 vs SOL 92 px);
+         label panjang tetap di Token facts. */
+      { key: 'h120', label: 'Still holding, 2m', value: tandaAngka(d.holders_120), title: INFO_HOLDERS_120, why: 'Buyers still holding after the first 2 minutes were not measured for this pair.' },
+      { key: 'top1', label: 'Top buyer, 2m', value: tandaPersen(d.top1_pct_120), title: INFO_TOP1_120, why: 'The largest buyer’s share in the first 2 minutes was not measured for this pair.' },
     ],
     /* ⭐ U17 (audit 7 Nov): MC, likuiditas/Curve funds & Buyers dulu tampil dua kali (strip kepala + grid ini); kini di
-       strip kepala saja. Grid = yang tak ada di kepala & relevan utk transaksi: umur, kurva, pajak. Chip kepala
-       "Graduated" / "Tax x%" (tags di atas) sudah menyebut kurva lulus & pajak > 0 → sel itu tak diulang. */
+       strip kepala saja. Grid = yang tak ada di kepala & relevan utk transaksi: kurva, umur, pajak. Chip "Tax x%"
+       sudah menyebut pajak > 0 → sel itu tak diulang.
+       ⭐ P-4 (§8, 22 Nov): urutan = SOL (Curve dulu, lalu Age/Tax); Curve kini tampil juga saat lulus ("Graduated"),
+       sama dgn sel "Curve Graduated" SOL. */
     pasar: [
+      { key: 'curve', label: 'Curve', value: teksKurva(d), why: 'The curve parameters for this token were not recorded.' },
       { key: 'age', label: 'Age', value: umur(d.age_secs) },
-      ...(d.graduated ? [] : [{ key: 'curve', label: 'Curve', value: teksKurva(d), why: 'The curve parameters for this token were not recorded.' }]),
       ...(pajak(d.tax_bps) ? [] : [{
         key: 'tax', label: 'Tax',
         // pajak > 0 sudah jadi chip kepala; yang sampai di sini: tak dilaporkan (null) atau 0
@@ -223,7 +234,9 @@ export function modelBnb(d: BnbTokenK, o: {
       }]),
     ],
     beliJual: {
-      judul: 'Buys / sells',
+      // P-4: jendela ditulis spt SOL ("Curve buys / sells, first 10 min"); BNB = trade kurva yang synt rekam
+      judul: 'Buys / sells, on the curve',
+      title: 'Counted from the bonding curve trades synt recorded for this token, not per wallet.',
       b: d.buys ?? null,
       s: d.sells ?? null,
       catatan: d.buys == null || d.sells == null
@@ -245,7 +258,7 @@ export function modelBnb(d: BnbTokenK, o: {
       </>
     ),
     chart: {
-      tfKet: `${teksQuote(d)}${pc ? ` 5m, 1h, 24h: price change in ${q ?? 'quote'} terms, from curve trades and pool prices synt recorded.` : ''}`,
+      tfKet: `${teksQuote(d)}${pc || d.change_since_first_pct != null ? ` ${pc ? 'Since first trade, 5m, 1h, 24h' : 'Since first trade'}: price change in ${q ?? 'quote'} terms, from curve trades and pool prices synt recorded.` : ''}`,
       // A5: sumber di kepala (sama letaknya dgn SOL); isi popover = kueri candle bnb.rs (trade kurva + harga pool bnb_pasca)
       sumber: d.graduated ? 'curve + DEX pool' : `${LAUNCHPAD[d.launchpad] ?? d.launchpad} curve`,
       sumberInfo: d.graduated
@@ -346,7 +359,7 @@ function modelSkorBnb(d: BnbTokenK, cal: BnbCalibrationResponse | null): ModelSk
       : cal
         ? 'This pair was scored, but the calibration has no row for its score yet, so no number is shown.'
         : 'The score appears once the BNB calibration has loaded: each score is read from it.'
-    return { skor: { kind: 'kosong', judul, sub }, aside, chips, chipsRingkas, arti: ARTI_SKOR_BNB + kalimatPlafon(cal), tangga, kakiTangga }
+    return { skor: { kind: 'kosong', judul, sub }, aside, chips, chipsRingkas, tangga, kakiTangga: <>{kakiTangga} {ARTI_SKOR_BNB}{kalimatPlafon(cal)}</> }
   }
   const kalimat = (
     <>
@@ -370,9 +383,10 @@ function modelSkorBnb(d: BnbTokenK, cal: BnbCalibrationResponse | null): ModelSk
     },
     chips,
     chipsRingkas,
-    arti: ARTI_SKOR_BNB + kalimatPlafon(cal) + (k.measured !== null && k.measured < k.max ? ` Only ${k.measured} of ${k.max} checks could be measured for this pair.` : ''),
     tangga,
-    kakiTangga,
+    /* ⭐ P-6 (§8, 22 Nov): paragraf arti skor BNB (dulu di bawah base rate → kartu 283 vs SOL 242 px) pindah ke catatan
+       tangga. "N measured" sudah ditulis di status ("2 of 4 checks passed, 3 measured"). */
+    kakiTangga: <>{kakiTangga} {ARTI_SKOR_BNB}{kalimatPlafon(cal)}</>,
   }
 }
 
@@ -398,7 +412,10 @@ function barisFaktaBnb(d: BnbTokenK, contoh: boolean): BarisFakta[] {
   const born = d.born_at ? waktuUtc(d.born_at) : null
   const rows: BarisFakta[] = [
     { label: 'Launchpad', value: LAUNCHPAD[d.launchpad] ?? d.launchpad },
-    { label: 'Born', value: born ?? '—', tone: born ? null : 'mute' },
+    /* ⭐ P-8 (§8, 22 Nov): label & format = SOL ("Created 1h 44m ago"), waktu absolut UTC di popover (dulu "Born" absolut) */
+    Number.isFinite(d.age_secs) && d.age_secs >= 0
+      ? { label: 'Created', value: `${umur(d.age_secs)} ago`, info: born ? `Launched on chain at ${born}.` : 'The launch time on chain was not recorded.' }
+      : { label: 'Created', value: '—', tone: 'mute', info: 'The launch time on chain was not recorded.' },
     {
       label: 'Curve progress',
       value: d.graduated ? 'Graduated' : cp == null || !Number.isFinite(cp) ? '—' : `${cp.toFixed(1)}%`,
@@ -455,6 +472,20 @@ function teksQuote(d: BnbTokenK): string {
   return kurs ? `Quoted in ${q}. Values in USD at ${kurs}; the chart stays in ${d.candle_unit}.` : `Quoted in ${q}. Values in USD.`
 }
 
+/**
+ * P-5: sel "Since first trade" dari synt-dash (`change_since_first_pct`, `first_trade_at` epoch detik). Sebab "—":
+ * server lama (field absen) · belum ada trade pertama · ada trade pertama tapi harga kini tak terukur.
+ */
+function sejakTradePertama(d: BnbTokenK): { label: string; value: number | null; why?: string } {
+  const label = 'Since first trade'
+  const v = d.change_since_first_pct
+  if (v != null && Number.isFinite(v)) return { label, value: v }
+  if (d.first_trade_at === undefined && v === undefined) return { label, value: null, why: 'The change since the first trade is not reported for this pair yet.' }
+  if (d.first_trade_at == null) return { label, value: null, why: 'No trade has been recorded for this pair yet, so there is no first price.' }
+  const lalu = Math.max(0, Math.round(Date.now() / 1000 - d.first_trade_at))
+  return { label, value: null, why: `The first trade was recorded ${umur(lalu)} ago, but the current price is not recent enough to compare.` }
+}
+
 /** 14c: sudah ada trade tapi harga & candle kosong = satuan quote tak terbaca (bnb.rs `satuan_sah`). */
 function satuanTakTerbaca(d: BnbTokenDetail): boolean {
   return d.candles.length === 0 && d.price_quote === null && (d.price_at !== null || (d.buys ?? 0) > 0)
@@ -480,7 +511,8 @@ function LaciKalibrasi({ cal, contoh, state }: { cal: BnbCalibrationResponse | n
   return (
     <details className="cd-card tv-drawer">
       <summary>
-        <h2 className="cd-card-title">How BNB scores are calibrated</h2>
+        {/* P-9 (§8): judul pendek agar tak terpotong di samping ringkasan */}
+        <h2 className="cd-card-title">Calibration</h2>
         {/* A5: kalibrasi memuat sendiri → kerangka, bukan teks "Loading…" */}
         {!cal && state === 'loading'
           ? <i className="sk tv-drawer-skel" role="status" aria-label="Loading calibration" />

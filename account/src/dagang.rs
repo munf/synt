@@ -19,6 +19,13 @@
 //! `/order` memungut biaya Jupiter 50 bps utk token < 24 jam — persis pair yang dinilai synt.
 //! `/build` (router Metis) tanpa biaya Jupiter, dan terukur 2 Nov merutekan bonding curve pump.fun.
 //! synt sendiri TIDAK memungut biaya (keputusan pemilik 2 Nov).
+//!
+//! ## Perakit langsung (22 Nov, izin pemilik 15 & 22 Nov — LAB saja)
+//! Bila `AKUN_RAKIT_URL` diisi DAN `Origin` permintaan ada di `AKUN_RAKIT_ORIGINS` (lab), `siapkan` lebih dulu
+//! meminta layanan perakit lokal (privat, di luar repo ini) merakit instruksi pump.fun langsung (curve & PumpSwap)
+//! dalam bentuk jawaban `/build` yang sama — lalu jalurnya identik: susun v0 → simulasi → wallet menandatangani.
+//! Transaksinya memuat tip kecil ke relay pengirim (bukan ke synt) dan `kirim` meneruskannya lewat perakit itu.
+//! Perakit menolak (bukan pump.fun, koin cashback, galat apa pun) → Jupiter seperti biasa. Preview TETAP Jupiter.
 
 use crate::api::{asal_sah, ip_klien, pengguna_sesi, AppState, Baris, Galat, Hasil};
 use crate::soltx::{self, Instruksi, Kunci, Meta};
@@ -54,6 +61,9 @@ pub struct Dagang {
     /// Jupiter tanpa key = 0,5 req/dtk SE-IP; dengan key gratis 1 req/dtk. Panggilan diantre di sini
     /// supaya kelebihan laju jadi tunggu sebentar, bukan 429 ke pengguna.
     jup_terakhir: tokio::sync::Mutex<Instant>,
+    /// perakit langsung lokal (kosong = mati) & origin yang boleh memakainya
+    langsung: Option<String>,
+    langsung_asal: Vec<String>,
 }
 
 impl Dagang {
@@ -64,13 +74,58 @@ impl Dagang {
         }
         let http = reqwest::Client::builder().timeout(Duration::from_secs(12)).build()?;
         let jup_key = std::env::var("AKUN_JUP_API_KEY").ok().filter(|k| !k.is_empty());
-        info!(jupiter_key = jup_key.is_some(), "trading aktif");
+        let langsung = std::env::var("AKUN_RAKIT_URL").ok().map(|u| u.trim_end_matches('/').to_string()).filter(|u| !u.is_empty());
+        let langsung_asal: Vec<String> = std::env::var("AKUN_RAKIT_ORIGINS")
+            .unwrap_or_default()
+            .split(',')
+            .map(|o| o.trim().to_string())
+            .filter(|o| !o.is_empty())
+            .collect();
+        info!(jupiter_key = jup_key.is_some(), perakit = langsung.is_some(), ?langsung_asal, "trading aktif");
         Ok(Some(Arc::new(Self {
             http,
             rpc,
             jup_key,
             jup_terakhir: tokio::sync::Mutex::new(Instant::now() - Duration::from_secs(10)),
+            langsung,
+            langsung_asal,
         })))
+    }
+
+    /// Perakit langsung boleh dipakai utk permintaan ini? (per permintaan: satu proses melayani lab & preview)
+    pub fn langsung_untuk(&self, h: &HeaderMap) -> bool {
+        let asal = h.get(header::ORIGIN).and_then(|v| v.to_str().ok()).unwrap_or("");
+        self.langsung.is_some() && !asal.is_empty() && self.langsung_asal.iter().any(|o| o == asal)
+    }
+
+    /// Minta perakit lokal merakit swap. `None` = tak didukung / galat → pemanggil memakai Jupiter.
+    async fn perakit(&self, wallet: &str, mint: &str, beli: bool, jumlah: u128, slippage_bps: u16) -> Option<Value> {
+        let url = self.langsung.as_ref()?;
+        let jumlah = u64::try_from(jumlah).ok()?;
+        let r = self
+            .http
+            .post(format!("{url}/rakit"))
+            .json(&json!({ "wallet": wallet, "mint": mint, "side": if beli { "buy" } else { "sell" }, "amount": jumlah.to_string(), "slippageBps": slippage_bps }))
+            .send()
+            .await
+            .map_err(|e| warn!("perakit tak terjangkau: {e}"))
+            .ok()?;
+        let kode = r.status();
+        let v: Value = r.json().await.unwrap_or(Value::Null);
+        if !kode.is_success() || v.get("swapInstruction").is_none() {
+            let detail = v.get("detail").cloned().unwrap_or_default();
+            info!(mint, %kode, %detail, "perakit menolak; pakai Jupiter");
+            return None;
+        }
+        Some(v)
+    }
+
+    /// Teruskan transaksi bertanda lewat perakit (relay ber-stake + RPC serentak).
+    async fn kirim_langsung(&self, tx: &[u8]) -> anyhow::Result<()> {
+        let url = self.langsung.as_ref().ok_or_else(|| anyhow::anyhow!("perakit mati"))?;
+        let r = self.http.post(format!("{url}/kirim")).json(&json!({ "transaction": B64.encode(tx) })).send().await?;
+        anyhow::ensure!(r.status().is_success(), "perakit menolak kirim: {}", r.status());
+        Ok(())
     }
 
     pub async fn rpc(&self, method: &str, params: Value) -> anyhow::Result<Value> {
@@ -86,6 +141,38 @@ impl Dagang {
             anyhow::bail!("RPC {method}: {e}");
         }
         Ok(r["result"].clone())
+    }
+
+    pub(crate) fn http(&self) -> &reqwest::Client {
+        &self.http
+    }
+
+    /// Banyak panggilan satu metode dalam SATU permintaan batch JSON-RPC; hasil sejajar urutan `params` (galat → Null).
+    pub(crate) async fn rpc_batch(&self, method: &str, params: Vec<Value>) -> anyhow::Result<Vec<Value>> {
+        if params.is_empty() {
+            return Ok(vec![]);
+        }
+        let isi: Vec<Value> = params.into_iter().enumerate().map(|(i, p)| json!({ "jsonrpc": "2.0", "id": i, "method": method, "params": p })).collect();
+        let n = isi.len();
+        let mut coba = 0;
+        let r: Value = loop {
+            let jawab = self.http.post(&self.rpc).json(&isi).send().await.map_err(|e| anyhow::anyhow!("RPC batch {method}: {}", e.without_url()))?;
+            // 429 = batas laju paket RPC → tunggu & coba sekali lagi
+            if jawab.status() == StatusCode::TOO_MANY_REQUESTS && coba == 0 {
+                coba += 1;
+                tokio::time::sleep(Duration::from_millis(1_500)).await;
+                continue;
+            }
+            anyhow::ensure!(jawab.status().is_success(), "RPC batch {method}: status {}", jawab.status());
+            break jawab.json().await?;
+        };
+        let mut hasil = vec![Value::Null; n];
+        for x in r.as_array().ok_or_else(|| anyhow::anyhow!("RPC batch {method}: bukan array"))? {
+            if let Some(i) = x["id"].as_u64().map(|i| i as usize).filter(|i| *i < n) {
+                hasil[i] = x["result"].clone();
+            }
+        }
+        Ok(hasil)
     }
 
     async fn jupiter(&self, q: &[(&str, String)]) -> Result<Value, Galat> {
@@ -299,6 +386,10 @@ pub struct Bangunan {
     pub blok_akhir: i64,
     /// akun token sumber ikut ditutup (jual habis) → sewa kembali ke wallet
     pub menutup: bool,
+    /// "jupiter" | "langsung" (kolom `dagang.jalur`)
+    pub jalur: &'static str,
+    /// tip relay di dalam transaksi (lamport; 0 utk Jupiter)
+    pub tip: u64,
 }
 
 /// Kutip Jupiter → rakit v0 → simulasi (CU nyata) → rakit ulang dgn batas CU & priority fee.
@@ -315,7 +406,16 @@ pub async fn bangun(
     slippage_bps: u16,
     prioritas: u64,
     tutup: Option<(Kunci, Kunci)>,
+    langsung: bool,
 ) -> Result<Bangunan, Galat> {
+    if langsung {
+        if let Some(v) = d.perakit(wallet, mint, beli, jumlah, slippage_bps).await {
+            match bangun_dari(d, payer, mint, v, prioritas, tutup, true).await {
+                Ok(b) => return Ok(b),
+                Err(Galat(_, p)) => info!(mint, alasan = p, "rakitan langsung gagal simulasi; pakai Jupiter"),
+            }
+        }
+    }
     let (masuk_mint, keluar_mint) = if beli { (SOL, mint) } else { (mint, SOL) };
     let v = d
         .jupiter(&[
@@ -326,6 +426,19 @@ pub async fn bangun(
             ("slippageBps", slippage_bps.to_string()),
         ])
         .await?;
+    bangun_dari(d, payer, mint, v, prioritas, tutup, false).await
+}
+
+/// Jawaban berbentuk `/build` (Jupiter ATAU perakit langsung) → v0 → simulasi → v0 final.
+async fn bangun_dari(
+    d: &Dagang,
+    payer: &Kunci,
+    mint: &str,
+    v: Value,
+    prioritas: u64,
+    tutup: Option<(Kunci, Kunci)>,
+    langsung: bool,
+) -> Result<Bangunan, Galat> {
     let mut r = rakit(&v).map_err(|e| {
         warn!("rakit Jupiter: {e}");
         Galat(StatusCode::BAD_GATEWAY, "The swap router returned an unexpected route. Try again.")
@@ -356,10 +469,16 @@ pub async fn bangun(
         hasil => hasil?,
     };
     let cu = ((terpakai as f64 * 1.2) as u32 + 10_000).clamp(50_000, CU_SIMULASI);
-    let mikro = (prioritas as u128 * 1_000_000 / cu as u128) as u64;
+    let mut mikro = (prioritas as u128 * 1_000_000 / cu as u128) as u64;
+    if langsung {
+        // relay mewajibkan instruksi harga CU bernilai (tip saja tak cukup)
+        mikro = mikro.max(1);
+    }
     let pesan = susun(payer, &r, cu, mikro).map_err(|_| Galat(StatusCode::BAD_GATEWAY, "Could not build this transaction. Try again."))?;
     let tx = soltx::transaksi_kosong(&pesan);
-    Ok(Bangunan { v, pesan, tx, cu, blok_akhir: r.blok_akhir, menutup })
+    let tip = if langsung { v["tipLamports"].as_u64().unwrap_or(0) } else { 0 };
+    let jalur = if langsung { "langsung" } else { "jupiter" };
+    Ok(Bangunan { v, pesan, tx, cu, blok_akhir: r.blok_akhir, menutup, jalur, tip })
 }
 
 // ── saldo ───────────────────────────────────────────────────────────────────
@@ -469,7 +588,7 @@ pub async fn saldo(
 
 /// Info token dari Jupiter (simbol, nama, ikon, desimal, harga USD) utk ≤ 50 mint (+ SOL) dlm SATU panggilan.
 /// Gagal = peta kosong: posisi tetap tampil tanpa nama & nilai.
-async fn info_token(d: &Dagang, mints: &[String]) -> std::collections::HashMap<String, Value> {
+pub(crate) async fn info_token(d: &Dagang, mints: &[String]) -> std::collections::HashMap<String, Value> {
     let mut ids: Vec<&str> = mints.iter().map(String::as_str).take(49).collect();
     ids.push(SOL);
     let r = d.http.get(JUPITER_TOKEN).query(&[("query", ids.join(","))]).send().await;
@@ -557,8 +676,9 @@ pub async fn siapkan(
         j
     };
 
-    let Bangunan { v, pesan, tx, cu, blok_akhir, menutup } =
-        bangun(&d, &payer, &b.wallet, &mint, beli, jumlah, m.slippage_bps, m.priority_lamports, tutup).await?;
+    let langsung = d.langsung_untuk(&h);
+    let Bangunan { v, pesan, tx, cu, blok_akhir, menutup, jalur, tip } =
+        bangun(&d, &payer, &b.wallet, &mint, beli, jumlah, m.slippage_bps, m.priority_lamports, tutup, langsung).await?;
 
     let rute: Vec<String> = v["routePlan"]
         .as_array()
@@ -573,8 +693,8 @@ pub async fn siapkan(
 
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO dagang (pengguna_id, wallet, mint, sisi, masuk, perkiraan_keluar, minimal_keluar, slippage_bps,
-                             prioritas_lamports, dampak_harga, rute, pesan_hash, blok_akhir)
-         VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric, $7::numeric, $8, $9, $10, $11, $12, $13)
+                             prioritas_lamports, dampak_harga, rute, pesan_hash, blok_akhir, jalur)
+         VALUES ($1, $2, $3, $4, $5::numeric, $6::numeric, $7::numeric, $8, $9, $10, $11, $12, $13, $14)
          RETURNING id",
     )
     .bind(b.id)
@@ -590,6 +710,7 @@ pub async fn siapkan(
     .bind(&rute)
     .bind(Sha256::digest(&pesan).to_vec())
     .bind(blok_akhir)
+    .bind(jalur)
     .fetch_one(&s.pool)
     .await?;
 
@@ -604,8 +725,10 @@ pub async fn siapkan(
         "priceImpactPct": dampak,
         "route": rute,
         "computeUnits": cu,
-        // biaya jaringan perkiraan: 5000 lamport/tanda tangan + priority (sewa akun token tak termasuk)
-        "networkFeeLamports": (5_000 + m.priority_lamports).to_string(),
+        // biaya jaringan perkiraan: 5000 lamport/tanda tangan + priority + tip relay (sewa akun token tak termasuk)
+        "networkFeeLamports": (5_000 + m.priority_lamports + tip).to_string(),
+        // jalur langsung: tip ke relay pengirim di dalam transaksi (bukan biaya synt)
+        "relayTipLamports": tip.to_string(),
         "lastValidBlockHeight": blok_akhir,
         // jual habis: akun token ikut ditutup, sewanya kembali ke wallet (terlihat di delta SOL)
         "closesTokenAccount": menutup,
@@ -630,12 +753,13 @@ struct Siap {
     pesan_hash: Vec<u8>,
     blok_akhir: i64,
     status: String,
+    jalur: String,
 }
 
 async fn ambil_siap(s: &AppState, pengguna: i64, id: &str) -> Hasil<Siap> {
     let id: i64 = id.parse().map_err(|_| Galat(StatusCode::BAD_REQUEST, "Unknown trade."))?;
     let r = sqlx::query_as::<_, Siap>(
-        "SELECT id, wallet, mint, pesan_hash, blok_akhir, status FROM dagang WHERE id = $1 AND pengguna_id = $2",
+        "SELECT id, wallet, mint, pesan_hash, blok_akhir, status, jalur FROM dagang WHERE id = $1 AND pengguna_id = $2",
     )
     .bind(id)
     .bind(pengguna)
@@ -686,7 +810,18 @@ pub async fn kirim(
     if n == 0 {
         return Err(Galat(StatusCode::CONFLICT, "This trade was already sent."));
     }
-    if let Err(e) = kirim_rpc(&d, &tx).await {
+    let terkirim = if siap.jalur == "langsung" {
+        match d.kirim_langsung(&tx).await {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                warn!(id = siap.id, "kirim lewat perakit gagal, coba RPC: {e}");
+                kirim_rpc(&d, &tx).await
+            }
+        }
+    } else {
+        kirim_rpc(&d, &tx).await
+    };
+    if let Err(e) = terkirim {
         warn!(id = siap.id, "sendTransaction ditolak: {e}");
         selesai(&s.pool, siap.id, "gagal", Some("The network rejected the transaction. Nothing was spent."), None, None).await;
         return Err(Galat(StatusCode::BAD_GATEWAY, "The network rejected the transaction. Nothing was spent."));
@@ -798,7 +933,7 @@ pub async fn lacak_tx(pool: PgPool, d: Arc<Dagang>, id: i64, wallet: String, min
 async fn tx_json(d: &Dagang, tanda: &str) -> Option<Value> {
     for _ in 0..5 {
         if let Ok(v) = d
-            .rpc("getTransaction", json!([tanda, { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 0, "commitment": "confirmed" }]))
+            .rpc("getTransaction", json!([tanda, { "encoding": "jsonParsed", "maxSupportedTransactionVersion": 1, "commitment": "confirmed" }]))
             .await
         {
             if !v.is_null() {

@@ -92,6 +92,8 @@ function TinjauSol({ t }: { t: Tinjauan & { chain: 'sol' } }) {
     beli ? `${jumlahRingkas(dariMentah(x, desimal))} ${t.simbol}` : teksSol(x)
   const dampak = k.priceImpactPct == null ? 'Not reported' : `${(k.priceImpactPct * 100).toFixed(2)}%`
   const dampakBesar = (k.priceImpactPct ?? 0) >= 0.05
+  // jalur langsung (lab): tip relay ikut di transaksi → disebut terpisah, bukan disembunyikan di biaya jaringan
+  const adaTip = Number(k.relayTipLamports ?? 0) > 0
 
   return (
     <div className="tr-latar" onClick={(e) => e.target === e.currentTarget && t.jawab(false)}>
@@ -120,9 +122,15 @@ function TinjauSol({ t }: { t: Tinjauan & { chain: 'sol' } }) {
             <dd>{(t.slippageBps / 100).toLocaleString('en-US', { maximumFractionDigits: 2 })}%</dd>
           </div>
           <div>
-            <dt>Network and priority fee</dt>
+            <dt>{adaTip ? 'Network, priority and relay fee' : 'Network and priority fee'}</dt>
             <dd>{teksSol(k.networkFeeLamports)}</dd>
           </div>
+          {adaTip && (
+            <div>
+              <dt>Relay tip (in the fee above)</dt>
+              <dd title="Paid to the transaction relay that sends this trade to the network, not to synt">{teksSol(k.relayTipLamports as string)}</dd>
+            </div>
+          )}
           <div>
             <dt>Route</dt>
             <dd>{k.route || 'Jupiter'}</dd>

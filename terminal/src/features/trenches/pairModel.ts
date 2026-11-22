@@ -1,3 +1,5 @@
+import { tingkat, type Sinyal } from '@/features/risk/ambang'
+import { bobotTampilan } from '@/features/risk/bobotTampilan'
 import type { BnbCalibrationResponse, BnbTrenchItem, TokenDetail as ApiToken, TrenchItem } from '@/api/types'
 import { gambarToken, type SumberGambar } from '@/components/Avatar'
 import { nadaDariBase } from '@/components/ScoreCell'
@@ -51,6 +53,11 @@ export interface Reason {
   full: string
   /** true = menurunkan skor / sinyal gagal; null = tak terukur. */
   bad: boolean | null
+  /** T-8 (§8, 22 Nov): SOL = bobot faktor (tampilan apa adanya, `adapt.ts`) → hasil di kanan daftar faktor panel.
+      Absen = BNB (hasil Pass/Flag) atau konteks tanpa bobot (gini). */
+  weight?: number
+  /** T-8: baris konteks (SOL gini) — bukan faktor skor, hasilnya ditulis "Context". */
+  context?: boolean
 }
 
 export type Tone = 0 | 1 | 2 | 3 | 4
@@ -100,13 +107,16 @@ export interface PairModel {
   /** Tag baris-2 identitas (urut: peringatan → quote non-BNB → pajak → launchpad). SOL: hanya label P2. */
   tags: Tag[]
   /** T1: tag yang ikut tampil di BARIS tabel (BNB: peringatan + quote non-BNB; pajak biasa & launchpad hanya di
-      panel, spt baris SOL yang hanya membawa alamat). Tanpa field ini = `tags`. */
+      panel, spt baris SOL yang hanya membawa alamat). Tanpa field ini = `tags`. T-6 (22 Nov): SOL kini juga punya
+      tag launchpad di `tags` (panel) → baris SOL memakai `rowTags` (label P2 saja). */
   rowTags?: Tag[]
   ageSecs: number | null
   price: Num & { text: string }
   /** "Price as of 2h 10m ago" (BNB) bila harga lama. */
   priceStale: string | null
-  change: Num & { label: string }
+  /** T-2 (22 Nov): `label` = token jendela pendek yang SAMA di sel MC & panel ("launch", "1h", "24h", "5m"); `info` =
+      penjelas jendela (popover di panel). */
+  change: Num & { label: string; info?: string }
   mcap: Num
   /** Likuiditas pool (SOL: kurva/AMM, BNB: pool DEX dua sisi). */
   liq: Num
@@ -139,8 +149,10 @@ export interface PairModel {
   move: Num
   /** Catatan quote BNB ("Quoted in BNCB. …"). */
   quoteNote: string | null
-  /** SOL: bisa dibeli lewat Quick buy (contoh). */
+  /** Bisa dibeli lewat Quick buy (SOL; BNB hanya pair ber-quote BNB). */
   buy: boolean
+  /** T-4 (22 Nov): `buy` false tapi slot aksi tetap diisi tombol Buy nonaktif + sebabnya (popover). null = tanpa slot. */
+  buyWhy: string | null
   /** SOL: penjelasan agen saat penilaian (sudah lewat kamus penerjemah mesin). null = tak ada. */
   explanation: string | null
   /** SOL: status jendela skor ("Final. Last scored 3h ago." / "… can still change for about 2m."). */
@@ -150,6 +162,14 @@ export interface PairModel {
 }
 
 /* ── format bersama ─────────────────────────────────────────────────────── */
+
+/** T-5 (22 Nov): kalimat TOP RISK kosong yang SAMA utk kedua chain (dulu BNB "No flag raised"). */
+export const RISIKO_KOSONG = 'No table flags'
+
+/** T-2: frasa jendela Δ di panel dari token jendela yang sama dgn sel tabel ("launch" → "since launch", "1h" → "in 1h"). */
+export function frasaJendela(label: string): string {
+  return label === 'launch' ? 'since launch' : `in ${label}`
+}
 
 /** Base rate: 1 desimal < 10% (1.2% vs 4.6% berbeda arti); ≥ 10% tetap 1 desimal bila nilainya berdesimal (skala
     publik 20.5%, 24.9%). Satu fungsi utk kedua chain → "collapsed" tampil sama. */
@@ -198,6 +218,14 @@ const FAKTOR: Record<RiskFactor['kind'], { short: (v: number) => string; full: (
   },
 }
 
+/** T-8: jenis faktor tabel → sinyal tabel ambang bersama (halaman token memakai pemetaan yang sama). */
+const SINYAL_FAKTOR: Partial<Record<RiskFactor['kind'], Sinyal>> = {
+  holders: 'top10',
+  devHolding: 'dev',
+  insiders: 'konsentrasi',
+  blacklist: 'tandai',
+}
+
 const TREND: Record<string, PairStatus> = {
   held: { label: 'Held', tone: 'ok', info: 'Audit score held during scoring. Not a price move.' },
   // R1: dulu amber seperti preview. ⭐ U18 (audit 7 Nov): ±95% baris SOL "climbed" → chip amber di hampir semua baris
@@ -218,6 +246,10 @@ export type SolDetail = Pick<ApiToken, 'mint' | 'name'> & {
   window_secs?: number | null
   explanation?: string | null
 }
+
+/** U10 / T-2: penjelas jendela Δ SOL ("launch"), dulu popover di kepala MC tabel. */
+const INFO_DELTA_SOL =
+  'The change since launch: the current price against the first price synt recorded for this pair. Token pages also show 5m, 1h and 24h changes from DexScreener, which cover other windows, so those numbers differ.'
 
 /** Batas jendela penilaian SOL (detik umur): skor bergerak di 60-500, sesudahnya final (= token/adapt.ts `scoring`). */
 const JENDELA_AKHIR = 500
@@ -252,10 +284,21 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     .sort((a, b) => a.weight - b.weight)
     .slice(0, 3)
     .map((f) => ({ short: FAKTOR[f.kind].short(f.pct), full: `${FAKTOR[f.kind].full(f.pct)}, lowering the score.`, bad: true }))
-  const reasonsFull: Reason[] = urut.map((f) => ({ short: FAKTOR[f.kind].short(f.pct), full: FAKTOR[f.kind].full(f.pct), bad: f.weight < 0 }))
+  /* T-8: hasil di kanan daftar faktor panel = bobot TAMPILAN yang sama dgn tab Score factors halaman token
+     (`bobotTampilan`, dari tingkat ambang bersama) → satu faktor satu angka di kedua tempat. Bobot tabel (`adapt.ts`,
+     dasar TOP RISK) tak berubah; arah/tingkatnya sama karena keduanya membaca `ambang.ts`. */
+  const reasonsFull: Reason[] = urut.map((f) => {
+    const sinyal = SINYAL_FAKTOR[f.kind]
+    return {
+      short: FAKTOR[f.kind].short(f.pct),
+      full: FAKTOR[f.kind].full(f.pct),
+      bad: f.weight < 0,
+      weight: sinyal ? bobotTampilan(tingkat(sinyal, f.kind === 'devHolding' ? Math.max(0, f.pct) : f.pct)) : f.weight,
+    }
+  })
   // Sebaran kepemilikan (gini) = konteks, tak pernah ditandai buruk di sini (ambangnya bukan ambang mesin)
   if (it.risk.gini !== null && it.risk.gini !== undefined && Number.isFinite(it.risk.gini)) {
-    reasonsFull.push({ short: `Spread ${it.risk.gini.toFixed(2)}`, full: `Ownership inequality ${it.risk.gini.toFixed(2)} on a 0 to 1 scale`, bad: false })
+    reasonsFull.push({ short: `Spread ${it.risk.gini.toFixed(2)}`, full: `Ownership inequality ${it.risk.gini.toFixed(2)} on a 0 to 1 scale`, bad: false, context: true })
   }
 
   const score: PairScore =
@@ -290,7 +333,13 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     href: `/coin/${it.mint}`,
     explorer: { name: 'Solscan', url: `https://solscan.io/token/${it.mint}` },
     launchpad: 'pump.fun',
-    tags: beku ? [{ label: LABEL_PASAR_BELUM, tone: 'warn', info: JUDUL_PASAR_BELUM }] : [],
+    // T-6 (22 Nov): panel SOL ikut menampilkan launchpad spt BNB (feed Trenches SOL = pair pump.fun yang dinilai mesin);
+    // baris tabel tetap hanya label P2 (`rowTags`)
+    tags: [
+      ...(beku ? [{ label: LABEL_PASAR_BELUM, tone: 'warn' as const, info: JUDUL_PASAR_BELUM }] : []),
+      { label: 'pump.fun', tone: 'neutral', info: 'Launched on pump.fun. The synt engine scores pump.fun pairs on Solana.' },
+    ],
+    rowTags: beku ? [{ label: LABEL_PASAR_BELUM, tone: 'warn', info: JUDUL_PASAR_BELUM }] : [],
     ageSecs: it.age_secs ?? null,
     price: {
       v: beku ? null : it.price_usd,
@@ -301,7 +350,8 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     // U16: persen null permanen (harga pertama mesin tak tercatat) → sebabnya di popover "—" kolom MC
     change: {
       v: r.marketCapChange,
-      label: 'since launch',
+      label: 'launch',
+      info: INFO_DELTA_SOL,
       // U16h: item feed SELALU punya baris v10_flow (labels.ts) → tak lagi bergantung `window_secs` baris terpilih
       why: beku ? JUDUL_PASAR_BELUM : sejakLaunchTakTercatat(it, true) ? SEBAB_SEJAK_TAK_TERCATAT : 'Not measured yet.',
     },
@@ -324,9 +374,9 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     },
     score,
     reasons,
-    // Review 21 Nov: "No lowering factors" bertentangan dgn halaman token utk faktor yang tak dinilai tabel
-    // (mis. sebaran kepemilikan/gini, ambang Dev beda) → kalimat dibatasi ke kolom ini; halaman token = daftar lengkap.
-    reasonsEmpty: r.factors.length ? 'No table flags' : 'Not measured',
+    // Review 21 Nov: "No lowering factors" bertentangan dgn halaman token utk faktor yang tak dinilai tabel → kalimat
+    // dibatasi ke kolom ini. 22 Nov: ambang kini satu tabel (`features/risk/ambang.ts`) & gini konteks di kedua halaman.
+    reasonsEmpty: r.factors.length ? RISIKO_KOSONG : 'Not measured',
     reasonsWhy: null,
     reasonsFull,
     status: null,
@@ -335,6 +385,7 @@ export function adaptSol(it: TrenchItem, detail?: SolDetail | null, row?: Trench
     move: { v: r.marketCapChange, why: beku ? JUDUL_PASAR_BELUM : 'Not measured yet.' },
     quoteNote: null,
     buy: true,
+    buyWhy: null,
     explanation: (d?.explanation ?? it.explanation ?? null) || null,
     scoreWindow: statusJendela(d),
   }
@@ -368,7 +419,7 @@ const SINYAL_LOLOS: Record<string, string> = {
   price_not_pumped: 'Price not pumped',
   holders_not_thin: 'Holders not thin',
   not_a_clone: 'Original name',
-  creator_not_serial: 'First launch today',
+  creator_not_serial: 'First launch in a day',
 }
 const SINYAL_BELUM: Record<string, string> = {
   price_not_pumped: 'Price run',
@@ -532,10 +583,17 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
     ageSecs: Number.isFinite(it.age_secs) ? it.age_secs : null,
     price: { v: pUsd ?? pQ, text: priceText, why },
     priceStale: hargaBasi(it),
-    change: { v: dv, label: dl, why: 'No price change recorded for this window yet.' },
+    change: {
+      v: dv,
+      label: dl,
+      why: 'No price change recorded for this window yet.',
+      info: `Price change over the last ${dl === '5m' ? '5 minutes' : dl === '1h' ? 'hour' : '24 hours'}, the longest window with data for this pair.`,
+    },
     mcap: { v: it.mcap_usd, why },
     liq: {
       v: it.liquidity_usd !== null && it.liquidity_usd >= 1 ? it.liquidity_usd : null,
+      // T-7 (22 Nov): K2 synt-dash = 2× sisi quote pool → sisinya ditulis spt SOL "(SOL side)"
+      info: lulus ? `Both sides of the DEX pool, counted as twice its ${q} side in USD.` : undefined,
       why: lulus
         ? it.liquidity_usd !== null && it.liquidity_usd < 1 ? 'Liquidity is under $1, so it is not shown as a figure.' : why
         : 'Still on the bonding curve, so there is no DEX pool yet.',
@@ -543,8 +601,9 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
     curveFunds: lulus ? null : { v: it.curve_funds_usd ?? null, why: it.price_source === 'curve' ? why : 'No curve trade has been recorded yet.' },
     buys: it.buys,
     sells: it.sells,
-    bsNote: 'on the curve',
-    holders: { v: it.buyers, label: 'Buyers', note: 'on the curve', why: 'Distinct buying wallets were not measured yet.' },
+    // T-7 (22 Nov): "on curve" (dulu "on the curve") → label tile panel satu baris spt SOL
+    bsNote: 'on curve',
+    holders: { v: it.buyers, label: 'Buyers', note: 'on curve', why: 'Distinct buying wallets were not measured yet.' },
     curve: {
       v: lulus ? 100 : it.curve_progress ?? null,
       note: lulus ? undefined : 'to DEX',
@@ -552,7 +611,7 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
     },
     score,
     reasons,
-    reasonsEmpty: sig.length ? (reasons.length ? null : 'No flag raised') : null,
+    reasonsEmpty: sig.length ? (reasons.length ? null : RISIKO_KOSONG) : null,
     reasonsWhy:
       k.kind === 'pending' ? 'Reasons come with the score, two minutes after launch.'
         : k.kind === 'quiet' ? 'Quiet launches are not scored, so there are no reasons.'
@@ -573,6 +632,8 @@ export function adaptBnb(it: BnbItemK, cal: BnbCalibrationResponse | null): Pair
         : pUsd === null ? `Quoted in ${q}.` : `Quoted in ${q}. Values in USD.`,
     // 3 Nov: trading BNB nyata — tombol Buy hanya utk pair ber-quote BNB (four.meme ber-quote lain tak didukung server)
     buy: it.quote_symbol === 'BNB',
+    // T-4 (22 Nov): slot aksi tetap ada → tombol nonaktif + sebab (logika transaksi tak berubah)
+    buyWhy: it.quote_symbol === 'BNB' ? null : 'Quick buy supports BNB-quoted pairs only',
     explanation: null,
     scoreWindow: null,
     taxBps: it.tax_bps ?? null,

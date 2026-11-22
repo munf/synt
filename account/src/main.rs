@@ -23,6 +23,7 @@ mod api;
 mod batas;
 mod bnb;
 mod dagang;
+mod dompet;
 mod dukungan;
 mod kotak;
 mod pemantau;
@@ -96,7 +97,7 @@ async fn main() -> anyhow::Result<()> {
         _ => {}
     }
 
-    // `synt-akun uji-dagang <wallet> <mint> buy|sell <jumlah mentah | habis>` — rakit + simulasi ke mainnet,
+    // `synt-akun uji-dagang <wallet> <mint> buy|sell <jumlah mentah | habis> [langsung]` — rakit + simulasi ke mainnet,
     // TANPA menandatangani/mengirim. Wallet bebas (simulasi `sigVerify: false`), mis. wallet publik ber-SOL.
     if arg.first().map(String::as_str) == Some("uji-dagang") {
         let (Some(w), Some(m), Some(sisi), Some(j)) = (arg.get(1), arg.get(2), arg.get(3), arg.get(4)) else {
@@ -112,10 +113,12 @@ async fn main() -> anyhow::Result<()> {
         } else {
             (j.parse()?, None)
         };
-        match dagang::bangun(&d, &payer, w, m, sisi == "buy", jumlah, 1500, 100_000, tutup).await {
+        // argumen ke-6 `langsung` = lewat perakit langsung (AKUN_RAKIT_URL) bila mendukung, else Jupiter
+        let langsung = arg.get(5).map(String::as_str) == Some("langsung");
+        match dagang::bangun(&d, &payer, w, m, sisi == "buy", jumlah, 1500, 100_000, tutup, langsung).await {
             Ok(b) => println!(
-                "LOLOS simulasi · rute {} · keluar {} · min {} · CU {} · tx {} byte · tutup akun {}",
-                b.v["routePlan"][0]["swapInfo"]["label"], b.v["outAmount"], b.v["otherAmountThreshold"], b.cu, b.tx.len(), b.menutup
+                "LOLOS simulasi · jalur {} · rute {} · keluar {} · min {} · CU {} · tx {} byte · tutup akun {} · tip {}",
+                b.jalur, b.v["routePlan"][0]["swapInfo"]["label"], b.v["outAmount"], b.v["otherAmountThreshold"], b.cu, b.tx.len(), b.menutup, b.tip
             ),
             Err(api::Galat(k, p)) => println!("DITOLAK {k}: {p}"),
         }
@@ -204,6 +207,9 @@ async fn main() -> anyhow::Result<()> {
         rem_dagang: Arc::new(batas::Rem::baru(60, menit)),
         rem_baca_dagang: Arc::new(batas::Rem::baru(120, menit)),
         // tiket: 3 per 10 menit per IP + plafon 60/jam seluruh layanan (rem per-IP bisa diakali rotasi alamat)
+        rem_dompet: Arc::new(batas::Rem::baru(6, menit)),
+        rem_dompet_global: Arc::new(batas::Rem::baru(10, menit)),
+        dash: Arc::new(dash.trim_end_matches('/').to_string()),
         rem_tiket: Arc::new(batas::Rem::baru(3, 10 * menit)),
         rem_tiket_global: Arc::new(batas::Rem::baru(60, 60 * menit)),
         tg_dukungan,
@@ -237,6 +243,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/akun/dagang/bnb/saldo", get(bnb::saldo))
         .route("/api/akun/dagang/bnb/posisi", get(bnb::posisi))
         .route("/api/akun/dagang/:id", get(dagang::status))
+        .route("/api/akun/dompet", get(dompet::dompet))
         // tiket support (4 Nov): tamu boleh, wajib kontak
         .route("/api/akun/dukungan", post(dukungan::kirim))
         // badan terbesar yang sah = gabung watchlist 200 token × ±50 byte

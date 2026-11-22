@@ -21,8 +21,6 @@ export interface SelStrip {
   why?: string
   title?: string
   tone?: string
-  /** U4: label panjang (fakta menit-2 BNB) boleh terlipat dua baris di tile kepala, angka sejajar di dasar baris. */
-  lipat?: boolean
   /**
    * U17 (audit 7 Nov): tile kepala yang hanya tampil sampai lebar ini (CSS): di atas 1080 kartu harga berdiri di samping
    * chart, di atas lipatan. Dipasang pada tile harga, dan pada tile Δ utama HANYA bila kartu harga menampilkan Δ yang
@@ -101,8 +99,6 @@ export interface ModelSkor {
   chips?: ReactNode
   /** Chip utk strip pasar (lebih sempit); absen → `chips`. */
   chipsRingkas?: ReactNode
-  /** Kalimat arti skor (BNB: risiko rug, bukan peluang winner). */
-  arti?: string
   tangga: AnakTangga[]
   /** Kaki tangga: sumber & n. */
   kakiTangga: ReactNode
@@ -147,9 +143,10 @@ export interface TokenViewModel {
     teks: string | null
     why?: string
     title?: string
-    /** Strip timeframe di bawah chart (SOL: Since launch · 5m · 1h · 24h; BNB: 5m · 1h · 24h). Pertama = kepala lengket. */
+    /** Strip timeframe di bawah chart, 4 sel kedua chain (SOL: Since launch · 5m · 1h · 24h; BNB P-5: Since first
+     *  trade · 5m · 1h · 24h). Pertama yang terisi = kepala lengket. */
     deltas: Delta[]
-    /** Perubahan di samping harga besar kartu harga ("since launch" / "24h"). */
+    /** Perubahan di samping harga besar kartu harga ("since launch" / BNB P-2: "in 1h", jendela terpanjang yang terisi). */
     utama?: Delta | null
     /** Label pengganti harga (P2 "Post-graduation market not loaded"). */
     label?: { teks: string; why?: string }

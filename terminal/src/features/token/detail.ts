@@ -133,6 +133,8 @@ export interface CoinDetail {
   /** Asal nilai launchpad (tooltip). */
   launchpadTitle?: string
   createdAgo: string
+  /** P-8: perkiraan waktu dibuat (epoch ms) = waktu jawaban − `age_secs`; null = umur tak sah. Absen (contoh) = tanpa popover. */
+  createdAtMs?: number | null
   /** Alamat penuh — untuk disalin. */
   address: string
   socials: { website?: string; twitter?: string; telegram?: string }
@@ -160,6 +162,8 @@ export interface CoinDetail {
   holders: number
   /** ⭐ 1c: konsentrasi top-10 SAAT AUDIT (`risk.top10_pct`, sekali), bukan live. null = tak terukur. */
   top10Pct: number | null
+  /** sebaran kepemilikan 0-1 saat audit (gini) — KONTEKS, tanpa ambang (tabel ambang bersama 22 Nov). null = tak terukur */
+  gini?: number | null
   /** Bukti token pump.fun dari mesin: `launchpad` menyebut pump.fun atau mint vanity `…pump`. */
   pumpBukti: boolean
 

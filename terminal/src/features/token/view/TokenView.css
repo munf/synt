@@ -174,10 +174,7 @@
   white-space: nowrap;
 }
 
-/* U4: label fakta menit-2 BNB (label Token facts) terlipat dua baris agar strip tak melebar; strip yang memuatnya
-   menyejajarkan angka di dasar tile (tile lain sebaris ikut setinggi tile terlipat). Strip SOL tak terpengaruh. */
-.cd-metric.is-lipat dt { max-width: 19ch; }
-.cd-metrics:has(.is-lipat) .cd-metric { justify-content: space-between; }
+/* P-1 (§8, 22 Nov): label fakta menit-2 BNB kini pendek satu baris ("Still holding, 2m") → aturan lipat U4 dilepas. */
 
 /* U17 (audit 7 Nov): satu metrik satu tempat di atas lipatan. Tile Harga (dan tile Δ utama bila kartu harga menampilkan
    Δ yang sama) hilang saat kartu harga berdiri di samping chart (> 1080, kolom kanan teratas). ≤ 1080 kartu harga
@@ -527,7 +524,6 @@
 }
 
 /* BNB: arti skor (risiko rug di menit 2, bukan peluang winner) */
-.cd-score-arti { margin: var(--sp-3) 0 0; font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--mute); }
 
 /* ── Bonding curve ── */
 .cd-curve { margin-top: var(--sp-5); padding-top: var(--sp-4); border-top: 1px solid var(--line); }

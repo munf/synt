@@ -4,7 +4,7 @@ import { InfoPopover } from '@/components/Popover'
 import { nadaDariBase } from '@/components/ScoreCell'
 import { useCopy } from '@/lib/useCopy'
 import { useWatchlist } from '@/lib/useWatchlist'
-import { alamatPendek } from '@/lib/format'
+import { alamatPendek, kelasBobot, teksBobot, teksHasil } from '@/lib/format'
 import { CatatanBasi } from '../chart/ChartRingan'
 import { persenRuntuh, type BarisFakta, type Delta, type ModelBeliJual, type ModelSkor, type SelStrip, type TabModel, type TautanKepala, type TokenViewModel } from './model'
 import './TokenView.css'
@@ -122,7 +122,7 @@ function Tautan({ tautan, catatan }: { tautan: TautanKepala[]; catatan?: string 
 /** Tile metrik kepala (preview `cd-metric`). "—" dgn sebab → popover ketuk. */
 function Tile({ x }: { x: SelStrip }) {
   return (
-    <div className={`cd-metric${x.lipat ? ' is-lipat' : ''}${x.hanyaSampai ? ` is-sampai-${x.hanyaSampai}` : ''}`}>
+    <div className={`cd-metric${x.hanyaSampai ? ` is-sampai-${x.hanyaSampai}` : ''}`}>
       <dt>{x.label}</dt>
       <dd className={x.tone}>
         <Nilai x={x} />
@@ -292,7 +292,6 @@ function ScoreCard({ s }: { s: ModelSkor }) {
 
       {/* Inilah kalimat yang membedakan audit dari jaminan. */}
       <p className="cd-baserate">{k.kind === 'value' ? k.kalimat : k.sub}</p>
-      {s.arti && <p className="cd-score-arti">{s.arti}</p>}
 
       {s.kurva && (
         <div className="cd-curve">
@@ -462,7 +461,10 @@ export function FactsCard({ rows, sumber, solo = false }: { rows: BarisFakta[]; 
 
 /* ── Potongan bersama utk adapter ── */
 
-/** Daftar faktor skor preview (ikon ✓/⚠ + bobot). SOL: badge risiko; BNB: `signals`. `bad: null` = tak terukur. */
+/**
+ * Daftar faktor skor preview (ikon ✓/⚠ + hasil di kanan). SOL: badge risiko, hasil = bobot (tampilan apa adanya);
+ * BNB: `signals`, hasil = "Pass" / "Flag" / "—" di slot yang sama (P-6, §8 22 Nov). `bad: null` = tak terukur.
+ */
 export function DaftarFaktor({ items, kosong }: {
   items: { id: string; judul: string; detail: string; bad: boolean | null; bobot?: number }[]
   kosong?: string
@@ -477,9 +479,11 @@ export function DaftarFaktor({ items, kosong }: {
           <span className="cd-factor-body">
             <span className="cd-factor-head">
               <span className="cd-factor-label">{f.judul}</span>
-              {f.bobot !== undefined && (
-                <span className={`cd-factor-weight ${f.bobot >= 0 ? 'is-up' : 'is-down'}`}>
-                  {f.bobot >= 0 ? '+' : ''}{f.bobot}
+              {f.bobot !== undefined ? (
+                <span className={`cd-factor-weight ${kelasBobot(f.bobot)}`}>{teksBobot(f.bobot)}</span>
+              ) : (
+                <span className={`cd-factor-weight ${f.bad === true ? 'is-down' : f.bad === false ? 'is-up' : 'is-flat'}`}>
+                  {teksHasil(f.bad)}
                 </span>
               )}
             </span>

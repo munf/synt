@@ -129,8 +129,11 @@ export function SyaratEn() {
         <li>One Wallet has one Account.</li>
         <li>
           Trading. synt prepares each buy or sell, tests it before showing it, and shows its estimated result. On
-          Solana it is built through a third-party swap router (currently Jupiter); the User signs it in the
-          User&apos;s own Wallet and synt forwards the signed transaction to the network. On BNB Chain it goes directly
+          Solana it is built through a third-party swap router (currently Jupiter) and, where synt offers it, for
+          pump.fun tokens directly with pump.fun&apos;s own programs; the User signs it in the User&apos;s own Wallet and
+          synt forwards the signed transaction to the network, through an RPC provider and, for directly built trades,
+          a transaction relay (currently Helius Sender). A transaction sent through the relay includes a small tip to
+          the relay (currently 0.000005 SOL), shown in the review before signing; synt receives none of it. On BNB Chain it goes directly
           to the launchpad&apos;s contract (four.meme or Flap.sh) or through a third-party swap router (currently
           KyberSwap), and the User&apos;s Wallet sends it itself. synt cannot sign, change or reverse a transaction and
           never moves funds without the User&apos;s signature.
@@ -417,9 +420,11 @@ export function SyaratId() {
         <li>Satu Wallet memiliki satu Akun.</li>
         <li>
           Transaksi. synt menyiapkan setiap pembelian atau penjualan, mengujinya sebelum ditampilkan, dan menampilkan
-          perkiraan hasilnya. Di Solana transaksi disusun lewat router swap pihak ketiga (saat ini Jupiter); Pengguna
-          menandatanganinya di Wallet Pengguna sendiri dan synt meneruskan transaksi yang sudah ditandatangani ke
-          jaringan. Di BNB Chain transaksi langsung menuju kontrak launchpad (four.meme atau Flap.sh) atau lewat router
+          perkiraan hasilnya. Di Solana transaksi disusun lewat router swap pihak ketiga (saat ini Jupiter) dan, bila
+          synt menyediakannya, untuk token pump.fun langsung dengan program milik pump.fun; Pengguna menandatanganinya di
+          Wallet Pengguna sendiri dan synt meneruskan transaksi yang sudah ditandatangani ke jaringan, lewat penyedia RPC
+          dan, untuk transaksi yang disusun langsung, relay transaksi (saat ini Helius Sender). Transaksi yang dikirim lewat relay memuat tip kecil untuk relay (saat ini 0,000005
+          SOL), yang ditampilkan di tinjauan sebelum ditandatangani; synt tidak menerima sedikit pun darinya. Di BNB Chain transaksi langsung menuju kontrak launchpad (four.meme atau Flap.sh) atau lewat router
           swap pihak ketiga (saat ini KyberSwap), dan Wallet Pengguna sendiri yang mengirimnya. synt tidak bisa
           menandatangani, mengubah atau membatalkan transaksi, dan tidak pernah memindahkan dana tanpa tanda tangan
           Pengguna.

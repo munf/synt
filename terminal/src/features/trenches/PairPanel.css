@@ -31,9 +31,17 @@
 }
 
 /* ── kepala kartu info ── */
-.pp-head { display: flex; align-items: flex-start; gap: var(--sp-4); }
-.pp-head-id { min-width: 0; flex: 1; }
-.pp-head-title { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+/* T-6 (22 Nov): grid → baris tag sebaris dgn umur selebar simbol+alamat; tinggi kepala sama kedua chain */
+.pp-head {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--sp-4);
+  row-gap: var(--sp-1);
+  align-items: center;
+}
+.pp-av { grid-row: 1 / 3; align-self: start; }
+.pp-head-title { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
 .pp-symbol {
   min-width: 0;
   overflow: hidden;
@@ -46,9 +54,23 @@
   transition: color var(--dur-fast) var(--ease);
 }
 .pp-symbol:hover { color: var(--accent); }
-.pp-meta { margin: var(--sp-1) 0 0; font-size: var(--fs-base); color: var(--mute); }
+.pp-meta {
+  grid-column: 2 / 4;
+  grid-row: 2;
+  display: flex;
+  flex-wrap: wrap; /* BNB dgn 4-5 tag (jarang) boleh melipat; kasus umum satu baris */
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--fs-base);
+  color: var(--mute);
+}
 
 .pp-addr {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
@@ -67,8 +89,7 @@
 .pp-addr:hover { color: var(--dim); border-color: var(--line); }
 .pp-addr svg { opacity: 0.7; }
 
-/* BNB: tag Name reused / Creator-filled / Tax / launchpad = chip preview */
-.pp-tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
+/* T-6: tag kini di `.pp-meta` (sebaris umur) kedua chain; baris `.pp-tags` BNB dilepas */
 
 /* ── baris aksi ── */
 .pp-actions { display: flex; align-items: center; justify-content: space-between; margin-top: var(--sp-6); }
@@ -102,6 +123,12 @@ span.pp-icon-btn { cursor: default; }
   cursor: pointer;
 }
 .pp-buy:hover { background: var(--dim); }
+/* T-4 (22 Nov): Buy nonaktif (BNB ber-quote non-BNB) = slot sama, redup + popover sebab */
+.ip-trigger.pp-buy-off-t { display: inline-flex; text-decoration: none; cursor: help; }
+.pp-buy.is-off { display: inline-block; background: transparent; color: var(--mute-2); box-shadow: inset 0 0 0 1px var(--line); cursor: help; }
+.pp-buy-off-t:hover .pp-buy.is-off,
+.pp-buy-off-t[aria-expanded='true'] .pp-buy.is-off { color: var(--mute); background: transparent; }
+.pp-buy-off-t:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-md); }
 
 /* ── harga ── */
 .pp-price {
@@ -250,19 +277,47 @@ span.pp-icon-btn { cursor: default; }
 .pp-ring-max { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--mute); }
 .pp-ring-empty { color: var(--mute-2); }
 
-.pp-bars { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6) var(--sp-5); margin-top: var(--sp-6); }
-/* Reviewer B3: deskripsi 11px bisa 2 baris → bar jadi kolom, trek didorong ke dasar sel (baris grid sama tinggi) */
-.pp-bar { min-width: 0; display: flex; flex-direction: column; }
-.pp-bar-track { margin-top: auto; }
-.pp-bar-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-2); }
-.pp-bar-label { font-size: var(--fs-xs); letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--mute); }
-.pp-bar-value { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.pp-bar-value.is-up { color: var(--up); }
-.pp-bar-value.is-down { color: var(--down); }
-/* deskripsi bar: 11px (preview 9px; teks yang dibaca ≥ 11px, §0.4) */
-.pp-bar-desc { margin: 2px 0 var(--sp-2); font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--mute-2); }
-.pp-bar-track { height: 3px; border-radius: var(--r-full); background: var(--line); overflow: hidden; }
-.pp-bar-fill { display: block; height: 100%; border-radius: var(--r-full); background: var(--accent); }
+/* ⭐ T-8 (§8, 22 Nov): daftar faktor (label · hasil di kanan) kedua chain; dulu SOL dua bar FLOW/DEVELOPER, BNB grid
+   2×2 sinyal. Label 12 Inter (= teks badan), hasil 12 mono kanan, kalimat BNB 11 redup (teks dibaca ≥ 11px, §0.4). */
+.pp-audit-list { margin-top: var(--sp-6); }
+.pp-audit-list:empty { display: none; }
+.pp-sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-6);
+  margin: 0 0 var(--sp-4);
+  font-size: var(--fs-sm);
+  color: var(--mute);
+}
+.pp-sum:last-child { margin-bottom: 0; }
+.pp-sum-item { display: inline-flex; align-items: baseline; gap: var(--sp-3); }
+.pp-sum-label { letter-spacing: var(--ls-wide); text-transform: uppercase; }
+.pp-sum-value { font-family: var(--font-mono); font-weight: var(--fw-semibold); color: var(--ink); font-variant-numeric: tabular-nums; }
+.pp-factors { list-style: none; margin: 0; padding: 0; }
+.pp-factor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--line);
+}
+.pp-factor:first-child { border-top: 0; padding-top: 0; }
+.pp-factor:last-child { padding-bottom: 0; }
+.pp-factor-label { min-width: 0; font-size: var(--fs-base); line-height: var(--lh-base); color: var(--dim); }
+.pp-factor-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-base);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.pp-factor-value.is-up { color: var(--up); }
+.pp-factor-value.is-down { color: var(--down); }
+.pp-factor-value.is-flat { color: var(--mute); }
+.pp-factor-desc { grid-column: 1 / -1; margin-top: 2px; font-size: var(--fs-sm); line-height: var(--lh-base); color: var(--mute-2); }
 
 /* ── Why this score ── */
 .pp-why { margin-top: var(--sp-6); padding-top: var(--sp-5); border-top: 1px solid var(--line); }

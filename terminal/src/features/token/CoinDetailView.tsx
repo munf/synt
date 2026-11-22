@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { WalletLink } from '@/features/wallet/WalletLink'
 import type { CoinDetail } from './detail'
 import { Avatar } from '@/components/Avatar'
+import { GraduatedChip, StatusChip } from '@/components/StatusChip'
 import { useCopy } from '@/lib/useCopy'
 import { PriceChartLive } from './PriceChartLive'
 import { kursSolUsd } from './adaptDetail'
@@ -212,6 +213,14 @@ export function CoinDetailView({ coin: c, sample = false, onKeputusan, muat }: {
       name: rapikanTeks(c.name),
       address: c.address,
       src: c.avatar,
+      /* ⭐ P-3 (§8, 22 Nov): chip launchpad + Graduated spt kepala BNB (sebaris alamat). Graduated hanya dgn bukti yang
+         sama dgn sel Curve (`lulus`: mesin `complete` / RugCheck), netral. Launchpad hanya bila diketahui. */
+      tags: c.launchpad || lulus ? (
+        <span className="tv-tags">
+          {c.launchpad && <StatusChip label={c.launchpad} tone="neutral" variant="outline" info={c.launchpadTitle} />}
+          {lulus && <GraduatedChip />}
+        </span>
+      ) : undefined,
     },
     tautan: [...sosial, { label: 'Solscan', href: `https://solscan.io/token/${c.mint}`, jenis: 'explorer' }],
     kembali: '/trenches',
@@ -382,10 +391,13 @@ function barisFakta(c: CoinDetail, sample: boolean, lp: LpFakta, dex: DexFakta, 
   // R2: urutan & isi = kartu Token facts preview (net flow & beli/jual kembali ke kartu harga)
   const rows: BarisFakta[] = [
     { label: 'Launchpad', value: c.launchpad ?? 'Not reported', tone: c.launchpad ? null : 'mute', info: c.launchpadTitle },
-    { label: 'Created', value: c.createdAgo },
+    // P-8 (§8): satu label "Created" relatif kedua chain; waktu absolut UTC (perkiraan dari umur) di popover
+    { label: 'Created', value: c.createdAgo, info: c.createdAtMs != null ? `About ${waktuUtcMs(c.createdAtMs)}, worked out from the pair’s age when synt last answered.` : undefined },
     { label: 'Curve progress', value: kurva.teks, tone: kurva.status === 'unknown' ? 'mute' : null },
     { label: 'Top 10 hold (at audit)', value: teksTop10(c.top10Pct), tone: c.top10Pct === null ? 'mute' : null },
   ]
+  // 22 Nov: gini bukan lagi faktor skor (tanpa ambang terukur) → tampil sbg konteks netral, sama dgn panel Trenches
+  if (c.gini != null) rows.push({ label: 'Ownership spread (0 to 1)', value: c.gini.toFixed(2), info: 'How unevenly the supply was spread across holders at audit. 0 is even, 1 is one holder. Context only: it does not count as a flag.' })
   if (sample) {
     rows.push({ label: 'LP burned or locked', value: 'Sample', tone: 'mute' }, { label: 'Dex paid', value: 'Sample', tone: 'mute' })
   } else {
@@ -393,6 +405,11 @@ function barisFakta(c: CoinDetail, sample: boolean, lp: LpFakta, dex: DexFakta, 
   }
   rows.push({ label: 'Socials', value: punyaSosial ? 'Present' : 'none', tone: punyaSosial ? 'up' : null })
   return rows
+}
+
+/** "2026-11-22 09:46 UTC" dari epoch ms. */
+function waktuUtcMs(ms: number): string {
+  return `${new Date(ms).toISOString().slice(0, 16).replace('T', ' ')} UTC`
 }
 
 /** Peringatan berdasar angka, bukan kata sifat (BRAND.md §3). ⛔ 1c: likuiditas tak diketahui (null) TIDAK memicu "$0". */

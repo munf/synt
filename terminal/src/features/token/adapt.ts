@@ -2,6 +2,7 @@ import { gambarToken } from '@/components/Avatar'
 import { alamatPendek, uang, umur, usd } from '@/lib/format'
 import type { TokenDetail as ApiToken } from '@/api/types'
 import type { TokenDetail, TokenMetric, TokenFact } from './types'
+import { tingkat } from '@/features/risk/ambang'
 import { JUDUL_PASAR_BELUM, launchpadTampil, likuiditasUsd, menitJendela, mesinSegar, pasarPascaLulusBelumDimuat, teksTop10 } from './labels'
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -265,6 +266,8 @@ export function adaptToken(a: ApiToken): TokenDetail {
    diperiksa pada `TokenRisk`, yang tersedia hanya top10/dev/same-slot/
    diversity/blacklist/gini. Keduanya ditandai mock, bukan dikarang diam-diam.
    ───────────────────────────────────────────────────────────────────────── */
+const NADA = { aman: 'up', waspada: 'warn', berat: 'down' } as const
+
 function faktaDari(a: ApiToken): TokenFact[] {
   const f: TokenFact[] = []
   const persen = (v: number) => `${v.toFixed(1)}%`
@@ -273,8 +276,8 @@ function faktaDari(a: ApiToken): TokenFact[] {
     f.push({
       label: 'Dev holding',
       value: persen(a.risk.dev_pct),
-      // Terukur: dev_pct tinggi menyertai rug jauh lebih sering.
-      tone: a.risk.dev_pct >= 10 ? 'down' : a.risk.dev_pct >= 5 ? 'warn' : 'up',
+      // Terukur: dev_pct tinggi menyertai rug jauh lebih sering. Ambang = tabel bersama (dulu 10/5 sendiri).
+      tone: NADA[tingkat('dev', a.risk.dev_pct)],
     })
   }
 
@@ -294,8 +297,14 @@ function faktaDari(a: ApiToken): TokenFact[] {
     f.push({
       label: 'Flagged wallets',
       value: String(a.risk.blacklist_hits),
-      tone: a.risk.blacklist_hits > 0 ? 'down' : 'up',
+      // tabel bersama: 1-4 wallet bertanda = netral (rata winner 2,46), bukan merah spt dulu (>0)
+      tone: a.risk.blacklist_hits === 0 ? 'up' : tingkat('tandai', a.risk.blacklist_hits) === 'aman' ? null : NADA[tingkat('tandai', a.risk.blacklist_hits)],
     })
+  }
+
+  // Sebaran kepemilikan (gini) = konteks netral, sama dgn Trenches (tabel ambang bersama 22 Nov: tanpa ambang)
+  if (a.risk.gini !== null) {
+    f.push({ label: 'Ownership spread (0 to 1)', value: a.risk.gini.toFixed(2), tone: null })
   }
 
   /* ⛔ 1d: "Same-slot tx" DISEMBUNYIKAN, sama dgn halaman token (2026-10-22): `same_slot_tx` selalu 0 sejak

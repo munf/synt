@@ -128,3 +128,18 @@ export function uang(v: number | null | undefined, kecil: 'lt1' | 'kosong' = 'lt
 export function hargaAtau(v: number | null | undefined): string {
   return angkaSah(v) && v > 0 ? harga(v) : '—'
 }
+
+/* ── Hasil faktor skor (P-6 / T-8, §8 22 Nov): satu kosakata utk halaman token & panel Trenches ── */
+
+/** Bobot faktor SOL (tampilan apa adanya): tanda tipografis, 0 tanpa tanda. */
+export function teksBobot(b: number): string {
+  return b > 0 ? `+${b}` : b < 0 ? `−${Math.abs(b)}` : '0'
+}
+/** Kelas warna bobot: menaikkan = up, menurunkan = down, 0 = datar (netral). */
+export function kelasBobot(b: number): 'is-up' | 'is-down' | 'is-flat' {
+  return b > 0 ? 'is-up' : b < 0 ? 'is-down' : 'is-flat'
+}
+/** Hasil sinyal tanpa bobot (BNB): "Flag" gagal, "Pass" lolos, "—" tak terukur. */
+export function teksHasil(bad: boolean | null): string {
+  return bad === true ? 'Flag' : bad === false ? 'Pass' : '—'
+}

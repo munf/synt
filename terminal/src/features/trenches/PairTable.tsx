@@ -8,7 +8,7 @@ import { StatusChip } from '@/components/StatusChip'
 import { InfoPopover } from '@/components/Popover'
 import { alamatPendek, pct, trendClass, uang } from '@/lib/format'
 import { useCopy } from '@/lib/useCopy'
-import { rate, type PairModel, type Num, type Tag } from './pairModel'
+import { RISIKO_KOSONG, frasaJendela, rate, type PairModel, type Num, type Tag } from './pairModel'
 import './PairTable.css'
 
 /**
@@ -35,6 +35,8 @@ interface Ctx {
   /** U14: sparkline skor boleh tampil = kolom SCORE selebar penuh (176 px). Panel tertutup selalu; panel terbuka
    *  selama tabel tak masuk mode sempit (lihat `kolom`). */
   spark: boolean
+  /** T-9 (22 Nov): tabel dlm mode sempit (ponsel) → keadaan skor kosong BNB satu baris. */
+  sempit: boolean
 }
 
 interface Col {
@@ -70,10 +72,23 @@ function Uang({ n, label }: { n: Num; label: string }) {
  * sparkline hanya dilepas bila lebar kartu memang tak cukup: mode sempit `kolom()` (BUANG habis & grid tetap tak muat,
  * kolom SCORE menyusut ke 96 px). Baris tanpa deret skor (BNB) tetap tata letak ringkas spt dulu.
  */
-function Score({ m, compact, spark }: { m: PairModel; compact: boolean; spark: boolean }) {
+function Score({ m, compact, spark, sempit }: { m: PairModel; compact: boolean; spark: boolean; sempit: boolean }) {
   const s = m.score
   if (s.kind !== 'value') {
     if (m.chain !== 'bnb') return <ScoreBadge empty={{ title: s.title, sub: s.sub }} info={s.info} />
+    /* ⭐ T-9 (22 Nov): mode sempit (ponsel, kolom 92 px) → keadaan satu baris tanpa slot angka "—" (dulu "Quiet ?" lalu
+       "not / scored" melipat 3 baris → baris BNB 107 px vs SOL 100). Sub-keadaan ("not scored", "in 81s") pindah ke
+       popover bersama penjelasnya; pemicu = ikon "?" yang sama. */
+    if (sempit) {
+      return (
+        <span className="pt-score is-empty is-satu">
+          <span className="pt-score-base pt-score-state">
+            {s.title}
+            {s.info && <InfoPopover info={s.sub ? `${s.title}, ${s.sub}. ${s.info}` : s.info} label={s.title} className="ip-q">?</InfoPopover>}
+          </span>
+        </span>
+      )
+    }
     /* T1: BNB tanpa skor (Quiet / Scoring at 2m) = anatomi sel skor SOL: slot angka "—" redup, keadaan di baris
        base rate. Pemicu popover tetap ikon "?" kecil (ketuk sel di ponsel = pilih baris). */
     return (
@@ -98,7 +113,9 @@ function Score({ m, compact, spark }: { m: PairModel; compact: boolean; spark: b
   )
   // ⛔ Base rate WAJIB menempel pada skor (PRODUK.md §0), juga saat sempit.
   const h = s.spark
-  const ringkas = compact && !(spark && h && h.length > 1)
+  /* ⭐ T-1 (22 Nov): dua baris hanya bila kolom memang sempit (`spark` false = mode sempit / lebar belum terukur), BUKAN
+     karena baris tak punya deret skor → BNB (tanpa sparkline) satu baris "4.6% collapsed" spt SOL di 1440. */
+  const ringkas = compact && !spark
   const base = s.rate === null ? <>No base<br />rate yet</> : ringkas ? <>{rate(s.rate)}<br />collapsed</> : <>{rate(s.rate)} collapsed</>
   if (ringkas) {
     return (
@@ -123,7 +140,7 @@ function Score({ m, compact, spark }: { m: PairModel; compact: boolean; spark: b
 function Risk({ m }: { m: PairModel }) {
   if (!m.reasons.length) {
     return m.reasonsEmpty ? (
-      <span className="pt-risk-none" title={m.reasonsEmpty === 'No table flags' ? 'This column shows quick checks only. The token page lists every score factor.' : undefined}>{m.reasonsEmpty}</span>
+      <span className="pt-risk-none" title={m.reasonsEmpty === RISIKO_KOSONG ? 'This column shows quick checks only. The token page lists every score factor.' : undefined}>{m.reasonsEmpty}</span>
     ) : (
       <Kosong why={m.reasonsWhy ?? undefined} label="Top risk" />
     )
@@ -268,14 +285,10 @@ function TagLineFit({ tags, sempit = false }: { tags: Tag[]; sempit?: boolean })
 const INFO_SCORE_PATH =
   'How the audit score moved while synt was scoring this pair, not the price. Held and Fell are highlighted; Climbed is the common path and stays dim.'
 
-/** U10: penjelas kepala MC SOL ("Δ launch"). */
-const INFO_DELTA_SOL =
-  'The % under market cap is the change since launch: the current price against the first price synt recorded for this pair. Token pages also show 5m, 1h and 24h changes from DexScreener, which cover other windows, so those numbers differ.'
-
 /* ── definisi kolom (lebar = preview) ── */
 
 const C: Record<string, Col> = {
-  score: { id: 'score', label: 'Score', width: '176px', sort: 'score', render: (m, c) => <Score m={m} compact={c.compact} spark={c.spark} /> },
+  score: { id: 'score', label: 'Score', width: '176px', sort: 'score', render: (m, c) => <Score m={m} compact={c.compact} spark={c.spark} sempit={c.sempit} /> },
   trend: {
     id: 'trend',
     // ⭐ U18: kepala "Trend" terbaca sbg arah harga → "Score path"; kepalanya = pemicu penjelas "not the price"
@@ -297,21 +310,21 @@ const C: Record<string, Col> = {
     width: '104px',
     align: 'r',
     sort: 'mc',
+    /* ⭐ T-2 (22 Nov): satu pola kedua chain = sufiks jendela DI SEL ("−73.4% launch", "−2.1% 1h"), kepala "MC" saja
+       (dulu SOL "MC Δ LAUNCH" di kepala, BNB sufiks di sel). Penjelas jendela ada di panel (`change.info`).
+       T-3: MC "—" (tanpa harga) → baris Δ tak dirender (dulu "—" ditumpuk dua); MC ada tapi Δ tak terukur → "—" bersebab
+       (U16) utk kedua chain. */
     render: (m) => (
       <span className="pt-stack">
         <Uang n={m.mcap} label="Market cap" />
-        {m.change.v === null && m.mcap.v !== null && m.chain === 'sol' ? (
-          // U16: "—" di bawah MC SOL bisa diketuk → sebabnya (mis. harga pertama mesin tak tercatat, kosong selamanya)
+        {m.mcap.v === null ? null : m.change.v === null ? (
           <span className="pt-delta pt-dim">
-            <InfoPopover info={m.change.why ?? 'Not measured yet.'} label="Change since launch">—</InfoPopover>
+            <InfoPopover info={m.change.why ?? 'Not measured yet.'} label={`Change ${frasaJendela(m.change.label)}`}>—</InfoPopover>
           </span>
-        ) : m.change.v === null || m.mcap.v === null ? (
-          <span className="pt-delta pt-dim">—</span>
         ) : (
           <span className={`pt-delta ${trendClass(m.change.v)}`}>
             {pct(m.change.v)}
-            {/* BNB: jendela Δ selalu ditulis (1h/24h), SOL = sejak launch seperti preview */}
-            {m.chain === 'bnb' && <span className="pt-delta-w"> {m.change.label}</span>}
+            <span className="pt-delta-w"> {m.change.label}</span>
           </span>
         )}
       </span>
@@ -385,7 +398,7 @@ const SET: Record<string, [string[], string[]]> = {
  *  Panel terbuka: tabel bisa membuang kolom lagi agar muat (lihat `BUANG`) → Trenches memakai `onTerlihat` bila ada. */
 export function kunciKepala(chain: 'sol' | 'bnb', view: PairView, compact: boolean): SortKey[] {
   // 'age' = kepala TOKEN (selalu ada; umur tak punya kolom sendiri) → Sort ringkas tak lagi selalu tampil
-  return kunciDari(kolom({ chain, view, compact, spark: !compact }).cols)
+  return kunciDari(kolom({ chain, view, compact, spark: !compact, sempit: false }).cols)
 }
 
 function kunciDari(cols: Col[]): SortKey[] {
@@ -413,10 +426,13 @@ const SEMPIT = {
   /* U26c: lebar = lebar ISI (sel SCORE & MC tanpa padding dalam di mode sempit, CSS). Skor ringkas terlebar 89 (angka +
      "24.9%/collapsed"); keadaan BNB tanpa skor melipat (CSS is-sempit). Dulu 96/68 + padding sel 2×6. */
   score: 92,
-  // MC + Δ: SOL "$41.9K/−65.9%" ≤ 56 (diukur 8 Nov); BNB menulis jendela ("+605.3% 24h") yang turun ke baris sendiri
-  mc: { sol: 60, bnb: 72 },
-  // TOKEN terkecil: 360 px BNB = 90 (avatar 30 + teks); di bawahnya (≤ 340) kartu kembali menggulir sedikit
-  tokenMin: 88,
+  /* MC + Δ: kedua chain menulis jendela di sel (T-2 22 Nov). Baris Δ sempit 11 px (CSS): "−88.9% launch" 81 px,
+     "+449.0% launch" ±88 px (diukur 22 Nov) → 88; ≥ 4 digit ("+1672.5% launch", jarang) melipat jendelanya ke baris
+     sendiri (CSS `.pt.is-sempit .pt-num .pt-delta`), tak meluap ke SCORE. */
+  mc: { sol: 88, bnb: 88 },
+  /* TOKEN terkecil: 360 px = 294 px isi kartu = 74 + 92 + 88 + jarak & padding → tanpa gulir di 360 (T-2: dulu 88 dgn
+     MC 60/72); di bawahnya (≤ 340) kartu kembali menggulir sedikit */
+  tokenMin: 74,
   /* ⭐ U26b/c: padding kiri-kanan baris & jarak kolom di mode sempit (CSS `.pt.is-sempit`, --sp-3). Baris = dua baris
      grid: TOKEN · SCORE · MC, lalu TOP RISK (selebar TOKEN+SCORE) · Buy (di bawah MC) → tanpa gulir samping. */
   pad: 8,
@@ -535,12 +551,12 @@ export function PairTable({
   /* ⭐ U15 (audit 7 Nov): `ctx`, kolom & callback baris berIDENTITAS STABIL → `Row` (memo) hanya dirender ulang bila
      isinya berubah. Dulu objek/fungsi baru tiap render membuat 50 baris dirender ulang di setiap jawaban poll 5 dtk
      walau isinya sama (Trenches SOL graduated ±406 ms script/menit dgn hanya 7 mutasi DOM; BNB ±722 ms). */
-  const dasar = useMemo(() => ({ chain, view, compact, spark: !compact }), [chain, view, compact])
+  const dasar = useMemo(() => ({ chain, view, compact, spark: !compact, sempit: false }), [chain, view, compact])
   const { cols, template, minW, sempit } = useMemo(() => kolom(dasar, compact ? muat : null), [dasar, compact, muat])
   /* U14: sparkline mengikuti LEBAR kartu (`muat`, ResizeObserver), bukan boolean panel. Sebelum lebar pertama terukur
      (muat null) tetap tanpa sparkline spt dulu → tak ada kedipan sparkline di ponsel. */
   const spark = !compact || (muat !== null && !sempit)
-  const ctx: Ctx = useMemo(() => ({ ...dasar, spark }), [dasar, spark])
+  const ctx: Ctx = useMemo(() => ({ ...dasar, spark, sempit }), [dasar, spark, sempit])
   // onSelect dari Trenches = fungsi baru tiap render → dibaca lewat ref, baris menerima pembungkus yang tetap
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
@@ -614,16 +630,15 @@ export function PairTable({
               ) : (
                 c.label
               )}
-              {/* ⭐ U10 (audit 7 Nov): persen di bawah MC SOL = sejak launch (harga kini vs harga pertama mesin), dulu tanpa
-                  label di tabel (hanya di panel). BNB menulis jendelanya di tiap sel ("+605.3% 24h") → tak perlu. */}
-              {c.id === 'mc' && chain === 'sol' && (
-                <InfoPopover info={INFO_DELTA_SOL} label="Change since launch" className="pt-hk">Δ launch</InfoPopover>
-              )}
-              {c.id === 'score' && provisional && (
+              {/* U10 → T-2 (22 Nov): "Δ launch" di kepala MC SOL dilepas; jendela kini ditulis di tiap sel kedua chain. */}
+              {/* T-9 (22 Nov): mode sempit → Provisional = ikon "?" (dulu chip melipat di kepala SCORE 92 px) */}
+              {c.id === 'score' && provisional && (sempit ? (
+                <InfoPopover info={provisional} label="Provisional calibration" className="ip-q pt-prov-q">?</InfoPopover>
+              ) : (
                 <InfoPopover info={provisional} label="Provisional calibration" className="chip-trigger pt-prov-t">
                   <span className="pt-prov">Provisional</span>
                 </InfoPopover>
-              )}
+              ))}
             </span>
           )
         })}
@@ -732,7 +747,8 @@ const Row = memo(function Row({ m, cols, ctx, sempit, selected, expanded, onSele
             {/* ⭐ Alamat, bukan handle sosial: simbol tidak unik, alamat bisa diverifikasi di explorer */}
             {/* SOL: label P2 di baris sendiri (preview). T1: BNB sama, tag baris di bawah alamat dlm satu baris (+N) */}
             <span className="pt-mint">{alamatPendek(m.address)}</span>
-            {m.chain === 'bnb' ? (m.rowTags ?? m.tags).length > 0 && <TagLineFit tags={m.rowTags ?? m.tags} sempit={sempit} /> : <TagLine tags={m.tags} />}
+            {/* T-6: SOL `tags` kini memuat launchpad (panel) → baris memakai `rowTags` (label P2) di kedua chain */}
+            {m.chain === 'bnb' ? (m.rowTags ?? m.tags).length > 0 && <TagLineFit tags={m.rowTags ?? m.tags} sempit={sempit} /> : <TagLine tags={m.rowTags ?? m.tags} />}
           </span>
         </span>
 
@@ -756,8 +772,8 @@ const Row = memo(function Row({ m, cols, ctx, sempit, selected, expanded, onSele
           >
             <ChevronIcon flipped={expanded} />
           </button>
-          {/* 2 Nov: quick buy NYATA (jumlah = pengaturan Quick buy; SOL saja, BNB belum) */}
-          {m.buy && <QuickBuy mint={m.address} symbol={m.symbol} className="pt-buy" chain={m.chain} />}
+          {/* 2 Nov: quick buy NYATA (jumlah = pengaturan Quick buy; BNB sejak 3 Nov, pair ber-quote BNB) */}
+          {m.buy ? <QuickBuy mint={m.address} symbol={m.symbol} className="pt-buy" chain={m.chain} /> : m.buyWhy && <BuyOff why={m.buyWhy} symbol={m.symbol} cls="pt-buy" />}
         </span>
       </div>
 
@@ -799,6 +815,19 @@ function Expand({ m }: { m: PairModel }) {
         <Link to={m.href} className="pt-open">Open full audit →</Link>
       </div>
     </div>
+  )
+}
+
+/**
+ * ⭐ T-4 (22 Nov): slot aksi selalu terisi. Pair yang tak bisa Quick buy (BNB ber-quote non-BNB) = tombol "Buy" redup
+ * yang membuka sebabnya (popover ketuk), bukan kolom bolong. Hanya tampilan: tak memanggil QuickBuy/transaksi apa pun.
+ * Pemicu popover sudah <button> → isinya span bergaya tombol (`aria-disabled`).
+ */
+export function BuyOff({ why, symbol, cls }: { why: string; symbol: string; cls: string }) {
+  return (
+    <InfoPopover info={why} label={`Buy ${symbol} unavailable`} className={`${cls}-off-t`}>
+      <span className={`${cls} is-off`} aria-disabled="true">Buy</span>
+    </InfoPopover>
   )
 }
 

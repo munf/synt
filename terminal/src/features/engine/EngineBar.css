@@ -45,10 +45,9 @@
 /* R3 (DESIGN §0.4): footer = tampilan preview (label 10px 400 ls .05em, nilai 12px 600, lh 1.5) — kini langsung
    di varian `inline` components/Metric.css (pemakai satu-satunya: footer SOL & BNB), tanpa penimpaan lokal. */
 
-/* BNB: bar tak bisa dibuka (belum ada rincian per komponen) → tanpa kursor tangan; ruang chevron dicadangkan supaya
-   status berdiri di posisi yang sama dgn bar Solana. */
-.eb-bar.is-static { cursor: default; }
-.eb-chev-space { display: inline-block; width: 9px; height: 6px; margin-left: var(--sp-1); }
+/* T-11 (22 Nov): bar BNB kini bisa dibuka spt Solana → `.is-static` & ruang chevron cadangan dilepas. Nama versi
+   kalibrasi ("bnb-sehat-v1") di kotak stat 24px boleh melipat di kolom ponsel, tak meluap. */
+.eb-ver .mt-value { white-space: normal; overflow-wrap: anywhere; }
 
 .eb-status {
   display: inline-flex;

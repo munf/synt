@@ -47,6 +47,8 @@ export interface Kutipan {
   decimals: number | null
   /** jual habis: akun token yang kosong ikut ditutup, sewanya (~0,002 SOL) kembali ke wallet */
   closesTokenAccount?: boolean
+  /** jalur langsung (lab, 22 Nov): tip ke relay pengirim di DALAM transaksi, sudah termasuk networkFeeLamports. "0" = Jupiter */
+  relayTipLamports?: string
 }
 
 export interface Transaksi {

@@ -461,6 +461,10 @@
 @media (hover: hover) { .wt-tr:not(.wt-th):hover { background: var(--panel-3); } }
 .wt-tr-launch { grid-template-columns: minmax(0, 1.6fr) 96px 176px 120px; }
 .wt-tr-held { grid-template-columns: minmax(0, 1.6fr) 56px 64px 72px 176px 120px 88px; }
+/* 22 Nov: riwayat swap (synt-akun /dompet) */
+.wt-tr-swap { grid-template-columns: minmax(0, 1.6fr) 88px 104px 104px 104px 176px 80px; }
+.wt-num.is-up { color: var(--up); }
+.wt-num.is-down { color: var(--down); }
 /* kepala kolom = `.wp-th` preview (11px, 600, ls .05em, caps, --mute) */
 .wt-th {
   padding-top: var(--sp-2);
@@ -496,7 +500,7 @@
     padding: 0;
     border: 0;
   }
-  .wt-tr-launch, .wt-tr-held {
+  .wt-tr-launch, .wt-tr-held, .wt-tr-swap {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     row-gap: var(--sp-2);
     padding: var(--sp-3) var(--sp-4);
